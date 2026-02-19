@@ -1,0 +1,166 @@
+#######################
+1. quality control - FastQC
+#######################
+
+module load fastqc/0.11.9
+
+for i in *fastq.gz; do 
+	fastqc $i --noextract --outdir /N/slate/emnadols/ATAC-2026/fastqc_out; 
+done
+
+#######################
+2. trim reads - Trimmomatic
+#######################
+
+module load trimmomatic/0.36
+
+mkdir trimmed-ATAC
+
+for file in *_R1.fastq.gz; do
+  	X=$(basename $file _R1.fastq.gz)
+    echo working on $X
+    trimmomatic PE -threads 8 ${X}_R1.fastq.gz ${X}_R2.fastq.gz -baseout /N/slate/emnadols/ATAC-2026/trimmed-ATAC/${X}.fastq.gz \
+    ILLUMINACLIP:NexteraPE-PE.fa:2:30:10 LEADING:10 TRAILING:10 SLIDINGWINDOW:4:15 MINLEN:25;
+done
+
+#######################
+3. align reads with Bowtie2 and convert to BAM with samtools
+#######################
+
+module load python/3.10.5
+module load samtools
+module load bowtie2
+
+mkdir alignments
+
+# build reference genome
+bowtie2-build Otau3.2.fasta Otau3
+
+for file in *1P.fastq.gz; do
+	X=$(basename $file _1P.fastq.gz)
+	echo working on $X
+	bowtie2 -p 16 -x /N/slate/emnadols/genomes/Otau3.2 -1 ${X}_1P.fastq.gz -2 ${X}_2P.fastq.gz |
+	samtools view -@ 16 -bS - > /N/slate/emnadols/ATAC-2026/alignments-ATAC/${X}.bam;
+done
+
+#######################
+3.5) combine technical replicates before calling peaks
+#######################
+
+## for samples with only one replicate, renamed from Dg_F_E_1_S*_001.bam to DgFE1.bam directly
+
+samtools merge -o Dg_F1_E.bam Dg_F1_E_001.bam Dg_F1_E_002.bam
+
+#######################
+4. filter high-quality alignments
+#######################
+
+module load samtools
+module load bedtools
+
+for file in *.bam; do
+	X=$(basename $file .bam)
+	echo working on $X
+	samtools view -@ 4 -bq 20 $file | samtools view -@ 4 -h -f2 - | samtools sort -@ 4 - > /N/slate/emnadols/ATAC-2026/filtered_alignments/${X}_filtered.bam;
+done
+
+#######################
+5. remove PCR duplicates with macs2
+#######################
+
+module load python/3.8.2
+module load macs
+
+mkdir deduplicated/
+
+for file in Os*.bam; do
+	X=$(basename $file _filtered.bam)
+	echo working on $X
+	macs2 filterdup -i $file -f BAMPE -g 2.9e8 -o /N/slate/emnadols/${X}_dedup.bed --keep-dup=auto;
+done
+
+#######################
+6. call peaks with macs2
+#######################
+
+module load python/3.8.2
+module load macs
+
+for file in Ot*.bed; do
+	X=$(basename $file _dedup.bed)
+	echo working on $X
+	macs2 callpeak -t $file --nomodel --keep-dup=all --shift 100 --extsize 200 --outdir /N/slate/emnadols/peak-calls/0.01 -n ${X} -g 2.9e8 -f BEDPE -q 0.05;
+done
+
+#######################
+7. make single reference BED file and convert each sample to bam file
+#######################
+
+module load samtools
+module load bedtools
+
+#extract first three columns of each narrowPeak file into bed file
+for i in Ot*narrowPeak; do cut -f1,2,3 $i > `basename $i _peaks.narrowPeak`.bed; done
+for i in Os*narrowPeak; do cut -f1,2,3 $i > `basename $i _peaks.narrowPeak`.bed; done
+for i in Dg*narrowPeak; do cut -f1,2,3 $i > `basename $i _peaks.narrowPeak`.bed; done
+
+#concatenate all peak files into single reference BED file 
+cat Ot*.bed > Ot_allpeaks.bed
+cat Os*.bed > Os_allpeaks.bed
+cat Dg*.bed > Dg_allpeaks.bed
+
+#sort peaks by position
+sort -k1,1 -k2,2n Ot_allpeaks.bed > Ot_allpeaks_sorted.bed
+sort -k1,1 -k2,2n Os_allpeaks.bed > Os_allpeaks_sorted.bed
+sort -k1,1 -k2,2n Dg_allpeaks.bed > Dg_allpeaks_sorted.bed
+
+#merge peaks that overlap by 200bp+
+bedtools merge -d -200 -i Ot_allpeaks_sorted.bed > Ot_allpeaks_merged.bed
+bedtools merge -d -200 -i Os_allpeaks_sorted.bed > Os_allpeaks_merged.bed
+bedtools merge -d -200 -i Dg_allpeaks_sorted.bed > Dg_allpeaks_merged.bed
+
+#create column with new peak IDs
+awk -v OFS="\t" '{print $0,"peak"NR}' Ot_allpeaks_merged.bed > Ot_allpeaks_final.bed
+awk -v OFS="\t" '{print $0,"peak"NR}' Os_allpeaks_merged.bed > Os_allpeaks_final.bed
+awk -v OFS="\t" '{print $0,"peak"NR}' Dg_allpeaks_merged.bed > Dg_allpeaks_final.bed
+
+#convert dedup.bed to bed4
+cd /N/slate/emnadols/deduplicated
+for file in *_dedup.bed; do awk '{print $0"\t"NR}' $file > ../multicov/`basename $file _dedup.bed`.bed4; done
+
+#convert bed4 to bam 
+cd /N/slate/emnadols/multicov
+
+for file in Ot*.bed4; do
+	bedtools bedtobam -i $file -g /N/slate/emnadols/genomes/Otau3/Otau3.fasta.fai > `basename $file .bed4`.bam;
+done
+
+for file in Os*.bed4; do
+	bedtools bedtobam -i $file -g /N/slate/emnadols/genomes/Osag1/Osag1.fasta.fai > `basename $file .bed4`.bam;
+done
+
+for file in Dg*.bed4; do
+	bedtools bedtobam -i $file -g /N/slate/emnadols/genomes/Dgaz1.fasta.fai > `basename $file .bed4`.bam;
+done
+
+#sort bam files
+for file in *.bam; do
+	X=$(basename $file .bam)
+	echo working on $X
+	samtools sort -@16 $file > ${X}_sorted.bam;
+done
+
+#index bam files
+for file in *_sorted.bam; do samtools index $file; done 
+
+#######################
+8. quantify accessibility 
+#######################
+
+module load bedtools
+
+bedtools multicov -bams Ot_F1_AH_sorted.bam Ot_F1_G_sorted.bam Ot_F1_PH_sorted.bam Ot_F2_AH_sorted.bam Ot_F2_G_sorted.bam Ot_F2_PH_sorted.bam Ot_F3_AH_sorted.bam Ot_F3_G_sorted.bam Ot_F3_PH_sorted.bam Ot_F4_AH_sorted.bam Ot_F4_G_sorted.bam Ot_F4_PH_sorted.bam Ot_F5_AH_sorted.bam Ot_F5_G_sorted.bam Ot_F5_PH_sorted.bam Ot_M1_AH_sorted.bam Ot_M1_G_sorted.bam Ot_M1_PH_sorted.bam Ot_M2_AH_sorted.bam Ot_M2_G_sorted.bam Ot_M2_PH_sorted.bam Ot_M3_AH_sorted.bam Ot_M3_G_sorted.bam Ot_M3_PH_sorted.bam Ot_M4_AH_sorted.bam Ot_M4_G_sorted.bam Ot_M4_PH_sorted.bam Ot_M5_AH_sorted.bam Ot_M5_G_sorted.bam Ot_M5_PH_sorted.bam -bed Ot_allpeaks_final.bed > Ot_all_counts.txt
+
+bedtools multicov -bams Os_F1_AH_sorted.bam Os_F1_G_sorted.bam Os_F1_PH_sorted.bam Os_F2_AH_sorted.bam Os_F2_G_sorted.bam Os_F2_PH_sorted.bam Os_F3_AH_sorted.bam Os_F3_G_sorted.bam Os_F3_PH_sorted.bam Os_F4_AH_sorted.bam Os_F4_G_sorted.bam Os_F4_PH_sorted.bam Os_F5_AH_sorted.bam Os_F5_G_sorted.bam Os_F5_PH_sorted.bam Os_M1_AH_sorted.bam Os_M1_G_sorted.bam Os_M1_PH_sorted.bam Os_M2_AH_sorted.bam Os_M2_G_sorted.bam Os_M2_PH_sorted.bam Os_M3_AH_sorted.bam Os_M3_G_sorted.bam Os_M3_PH_sorted.bam Os_M4_AH_sorted.bam Os_M4_G_sorted.bam Os_M4_PH_sorted.bam Os_M5_AH_sorted.bam Os_M5_G_sorted.bam Os_M5_PH_sorted.bam -bed Os_allpeaks_final.bed > Os_all_counts.txt
+
+bedtools multicov -bams Dg_F1_AH_sorted.bam Dg_F1_G_sorted.bam Dg_F1_PH_sorted.bam Dg_F2_AH_sorted.bam Dg_F2_G_sorted.bam Dg_F2_PH_sorted.bam Dg_F3_AH_sorted.bam Dg_F3_G_sorted.bam Dg_F3_PH_sorted.bam Dg_F4_AH_sorted.bam Dg_F4_G_sorted.bam Dg_F4_PH_sorted.bam Dg_F5_AH_sorted.bam Dg_F5_G_sorted.bam Dg_F5_PH_sorted.bam Dg_M1_AH_sorted.bam Dg_M1_G_sorted.bam Dg_M1_PH_sorted.bam Dg_M2_AH_sorted.bam Dg_M2_G_sorted.bam Dg_M2_PH_sorted.bam Dg_M3_AH_sorted.bam Dg_M3_G_sorted.bam Dg_M3_PH_sorted.bam Dg_M4_AH_sorted.bam Dg_M4_G_sorted.bam Dg_M4_PH_sorted.bam Dg_M5_AH_sorted.bam Dg_M5_G_sorted.bam Dg_M5_PH_sorted.bam -bed Dg_allpeaks_final.bed > Dg_all_counts.txt
