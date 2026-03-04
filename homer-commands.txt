@@ -1,0 +1,36 @@
+### command to generate Homer bed files with correct input columns
+### input file: .txt file from R
+cut -f 1,2,3,4,5 OsPH_peaks_F_up.txt > OsPH_peaks_F_up.bed
+awk '{print $0, "+" }' OsPH_peaks_F_up.bed > OsPH_peaks_F_up_final.bed
+
+for file in *.txt; 
+do 
+	X=$(basename $file .txt)
+	echo working on $X
+	cut -f 1,2,3,4,5 $file > ${X}.bed;
+done
+
+for file in *.bed; 
+do 
+	X=$(basename $file .bed)
+	echo working on $X
+	awk '{print $0, "+" }' $file > ${X}_final.bed;
+done
+
+### ensure chromosome names match genome
+
+### add homer/bin directory to executable path
+### edit your ~/.bash_profile file to include:
+PATH="/Users/ericanadolski/Programs/Homer/bin/:$PATH"
+
+### running homer findMotifsGenome.pl; de novo motif finding
+findMotifsGenome.pl OsPH_peaks_F_up_final.bed Osag_masked.fasta ./OsPH-F-up-motifs -bg Os_allpeaks_final.bed -mask -size -50,50 -p 7 -mset insects -len 8,9,10,11,12,13,14,15,16,17,18,19,20
+findMotifsGenome.pl OsPH_peaks_M_up_final.bed Osag_masked.fasta ./OsPH-M-up-motifs -bg Os_allpeaks_final.bed -mask -size -50,50 -p 7 -mset insects -len 8,9,10,11,12,13,14,15,16,17,18,19,20
+findMotifsGenome.pl OsAH_peaks_F_up_final.bed Osag_masked.fasta ./OsAH-F-up-motifs -bg Os_allpeaks_final.bed -mask -size -50,50 -p 7 -mset insects -len 8,9,10,11,12,13,14,15,16,17,18,19,20
+findMotifsGenome.pl OsAH_peaks_M_up_final.bed Osag_masked.fasta ./OsAH-M-up-motifs -bg Os_allpeaks_final.bed -mask -size -50,50 -p 7 -mset insects -len 8,9,10,11,12,13,14,15,16,17,18,19,20
+findMotifsGenome.pl OsG_peaks_F_up_final.bed Osag_masked.fasta ./OsG-F-up-motifs -bg Os_allpeaks_final.bed -mask -size -50,50 -p 7 -mset insects -len 8,9,10,11,12,13,14,15,16,17,18,19,20
+
+### running annotatePeaks.pl to find peak locations of identified motifs
+annotatePeaks.pl Os_allpeaks_final.bed Osau_masked.fasta -m dsx-FW.motif > dsx_motif_locations.txt
+
+

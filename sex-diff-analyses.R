@@ -4,6 +4,7 @@ library(tidyverse)
 library(tximport)
 library(DESeq2)
 library(ggplot2)
+library(pheatmap)
 library(ggbreak)
 library(gplots)
 library(edgeR)
@@ -474,13 +475,13 @@ names(Ot_PH_MvF_gene)[1] <- "gene"
 deg_Ot_PH_MvF <- Ot_PH_MvF_gene %>% filter(padj <= 0.1)
 
 #AH
-Ot_AH_MvF_gene <- as.data.frame(results(Ot_dds_shrink, contrast=c("group","FAH","MAH")))
+Ot_AH_MvF_gene <- as.data.frame(results(Ot_dds_shrink, contrast=c("group","MAH","FAH")))
 Ot_AH_MvF_gene <- rownames_to_column(Ot_AH_MvF_gene)
 names(Ot_AH_MvF_gene)[1] <- "gene"
 deg_Ot_AH_MvF <- Ot_AH_MvF_gene %>% filter(padj <= 0.1)
 
 #G
-Ot_G_MvF_gene <- as.data.frame(results(Ot_dds_shrink, contrast=c("group","FG","MG")))
+Ot_G_MvF_gene <- as.data.frame(results(Ot_dds_shrink, contrast=c("group","MG","FG")))
 Ot_G_MvF_gene <- rownames_to_column(Ot_G_MvF_gene)
 names(Ot_G_MvF_gene)[1] <- "gene"
 deg_Ot_G_MvF <- Ot_G_MvF_gene %>% filter(padj <= 0.1)
@@ -509,19 +510,19 @@ tally(as.data.frame(results(Os_dds_shrink, contrast=c("group","MG","FG"))) %>% f
 
 # save results in dataframe
 # PH
-Os_PH_MvF_gene <- as.data.frame(results(Os_dds_shrink, contrast=c("group","FPH","MPH")))
+Os_PH_MvF_gene <- as.data.frame(results(Os_dds_shrink, contrast=c("group","MPH","FPH")))
 Os_PH_MvF_gene <- rownames_to_column(Os_PH_MvF_gene)
 names(Os_PH_MvF_gene)[1] <- "gene"
 deg_Os_PH_MvF <- Os_PH_MvF_gene %>% filter(padj <= 0.1)
 
 #AH
-Os_AH_MvF_gene <- as.data.frame(results(Os_dds_shrink, contrast=c("group","FAH","MAH")))
+Os_AH_MvF_gene <- as.data.frame(results(Os_dds_shrink, contrast=c("group","MAH","FAH")))
 Os_AH_MvF_gene <- rownames_to_column(Os_AH_MvF_gene)
 names(Os_AH_MvF_gene)[1] <- "gene"
 deg_Os_AH_MvF <- Os_AH_MvF_gene  %>% filter(padj <= 0.1)
 
 #G
-Os_G_MvF_gene <- as.data.frame(results(Os_dds_shrink, contrast=c("group","FG","MG")))
+Os_G_MvF_gene <- as.data.frame(results(Os_dds_shrink, contrast=c("group","MG","FG")))
 Os_G_MvF_gene <- rownames_to_column(Os_G_MvF_gene)
 names(Os_G_MvF_gene)[1] <- "gene"
 deg_Os_G_MvF <- Os_G_MvF_gene %>% filter(padj <= 0.1)
@@ -550,19 +551,19 @@ tally(as.data.frame(results(Dg_dds_shrink, contrast=c("group","MG","FG"))) %>% f
 
 # save results in dataframes 
 # PH
-Dg_PH_MvF_gene <- as.data.frame(results(Dg_dds_shrink, contrast=c("group","FPH","MPH")))
+Dg_PH_MvF_gene <- as.data.frame(results(Dg_dds_shrink, contrast=c("group","MPH","FPH")))
 Dg_PH_MvF_gene <- rownames_to_column(Dg_PH_MvF_gene)
 names(Dg_PH_MvF_gene)[1] <- "gene"
 deg_Dg_PH_MvF <- Dg_PH_MvF_gene %>% filter(padj <= 0.1)
 
 #AH
-Dg_AH_MvF_gene <- as.data.frame(results(Dg_dds_shrink, contrast=c("group","FAH","MAH")))
+Dg_AH_MvF_gene <- as.data.frame(results(Dg_dds_shrink, contrast=c("group","MAH","FAH")))
 Dg_AH_MvF_gene <- rownames_to_column(Dg_AH_MvF_gene)
 names(Dg_AH_MvF_gene)[1] <- "gene"
 deg_Dg_AH_MvF <- Dg_AH_MvF_gene %>% filter(padj <= 0.1)
 
 #G
-Dg_G_MvF_gene <- as.data.frame(results(Dg_dds_shrink, contrast=c("group","FG","MG")))
+Dg_G_MvF_gene <- as.data.frame(results(Dg_dds_shrink, contrast=c("group","MG","FG")))
 Dg_G_MvF_gene <- rownames_to_column(Dg_G_MvF_gene)
 names(Dg_G_MvF_gene)[1] <- "gene"
 deg_Dg_G_MvF <- Dg_G_MvF_gene %>% filter(padj <= 0.1)
@@ -999,9 +1000,9 @@ heatmap.2(as.matrix(Dg_G_deg[,8:19]),
 
 ###### Step 5: plot bar chart of sex-responsive genes across species and traits ####
 species <- c("Dgaz","Dgaz","Dgaz","Dgaz","Dgaz","Dgaz","Otau","Otau","Otau","Otau","Otau","Otau","Osag","Osag","Osag","Osag","Osag","Osag")
-sex <- c('F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M') 
+sex <- c('M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F','M','F') 
 trait <- c('G','G','PH', 'PH','AH','AH','G','G','PH', 'PH','AH','AH','G','G','PH', 'PH','AH','AH')
-upreg.genes <- c(568,620,100,77,23,11,448,938,777,648,771,946,431,859,300,181,179,36)
+upreg.genes <- c(568,620,100,77,23,11,448,938,648,777,771,946,431,859,300,181,179,36)
 
 deg_numbers <- data.frame(species,sex,trait,upreg.genes)
 head(deg_numbers)
@@ -1019,44 +1020,421 @@ bar_plot_deg <-ggplot(data=deg_numbers, aes(x=species, y=upreg.genes, fill=sex))
   #coord_flip()
 bar_plot_deg
 
-ggsave(bar_plot_deg, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/bar_plot_deg.pdf", width = 8, height = 5)
+ggsave(bar_plot_deg, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/bar_plot_deg.pdf", width = 10, height = 5)
+
+##### Step 6: GO term enrichment ###########
+### generate gene to GO mapping by joining table of UniProt BLAST hits to UniProt GO table ######
+
+# uniprot GO database
+uniprot_go <- read.delim("/Users/ericanadolski/Documents/Sexual_dimorphism_project/GO_enrich/uniprot_reviewed_db.tsv")
+
+# Otau
+Ot_uniprot_hits <- read_delim("/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Ot-uniprot-blast-hits.txt", col_names = c("gene","Entry.Name"))
+Ot_go_terms_full <- left_join(Ot_uniprot_hits, uniprot_go, by="Entry.Name") 
+Ot_go_terms <- Ot_go_terms_full %>% dplyr::select(gene, Gene.Ontology.IDs)
+head(Ot_go_terms)
+write.table(Ot_go_terms, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Ot_go_terms.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
+# reformat to geneID2GO in BBEdit
+
+# Osag
+Os_uniprot_hits <- read_delim("/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Os-uniprot-blast-hits.txt", col_names = c("gene","Entry.Name"))
+Os_go_terms_full <- left_join(Os_uniprot_hits, uniprot_go, by="Entry.Name") 
+Os_go_terms <- Os_go_terms_full %>% dplyr::select(gene, Gene.Ontology.IDs)
+head(Os_go_terms)
+write.table(Os_go_terms, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Os_go_terms.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
+
+# Dgaz
+Dg_uniprot_hits <- read_delim("/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Dg-uniprot-blast-hits.txt", col_names = c("gene","Entry.Name"))
+Dg_go_terms_full <- left_join(Dg_uniprot_hits, uniprot_go, by="Entry.Name") 
+Dg_go_terms <- Dg_go_terms_full %>% dplyr::select(gene, Gene.Ontology.IDs)
+head(Dg_go_terms)
+write.table(Dg_go_terms, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Dg_go_terms.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
+
+### read in custom GO mappings in geneID2GO format ####
+OtgeneID2GO <- readMappings(file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Ot_geneID2GO.txt")
+str(head(OtgeneID2GO))
+
+OsgeneID2GO <- readMappings(file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Os_geneID2GO.txt")
+str(head(OsgeneID2GO))
+
+DggeneID2GO <- readMappings(file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Dg_geneID2GO.txt")
+str(head(DggeneID2GO))
+
+##### run O taurus tests ####
+### Ot PH female upreg #####
+OtPHF_upreg <- Ot_PH_MvF_gene %>% 
+  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1",
+                          ifelse(padj <= 0.1 & log2FoldChange > 0, "0",
+                                 "0")))
+head(OtPHF_upreg)
+OtPHF_geneList <- as.factor(OtPHF_upreg$F.upreg)
+names(OtPHF_geneList) <- OtPHF_upreg$gene
+length(OtPHF_geneList) # total number of genes
+summary(OtPHF_geneList) # gives # of genes of interest
+
+# build GOdata object
+OtPHF_GOdata <- new("topGOdata",
+                    description = "GO analysis of Otau PH Female upreg genes",
+                    ontology = "BP", 
+                    allGenes = OtPHF_geneList, 
+                    annot = annFUN.gene2GO, 
+                    gene2GO = OtgeneID2GO, 
+                    nodeSize = 5)
+
+# run test for significance using the weight01 algorithm (default) with fisher 
+OtPHF_weight_fisher_result=runTest(OtPHF_GOdata, algorithm='weight01', statistic='fisher') 
+
+# generate table of results
+OtPHF_allGO=usedGO(OtPHF_GOdata)
+OtPHF_all_res=GenTable(OtPHF_GOdata, weightFisher=OtPHF_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtPHF_allGO))
+OtPHF_all_res$weightFisher <- as.numeric(OtPHF_all_res$weightFisher)
+
+#get list of significant GO terms
+OtPHF_results.table.p= OtPHF_all_res[which(OtPHF_all_res$weightFisher<=0.001),]
+dim(OtPHF_results.table.p) # 11
+
+### Ot PH male upreg ####
+OtPHM_upreg <- Ot_PH_MvF_gene %>% 
+  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
+
+OtPHM_geneList <- as.factor(OtPHM_upreg$M.upreg)
+names(OtPHM_geneList) <- OtPHM_upreg$gene
+OtPHM_GOdata <- new("topGOdata", description = "GO analysis of Otau PH Male upreg genes",
+                    ontology = "BP", allGenes = OtPHM_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
+
+OtPHM_weight_fisher_result=runTest(OtPHM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+
+OtPHM_allGO=usedGO(OtPHM_GOdata) # generate table of results
+OtPHM_all_res=GenTable(OtPHM_GOdata, weightFisher=OtPHM_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtPHM_allGO))
+OtPHM_all_res$weightFisher <- as.numeric(OtPHM_all_res$weightFisher)
+
+OtPHM_results.table.p= OtPHM_all_res[which(OtPHM_all_res$weightFisher<=0.001),] #get list of significant GO 
+dim(OtPHM_results.table.p) # 17
+
+### Ot AH female upreg ####
+OtAHF_upreg <- Ot_AH_MvF_gene %>% 
+  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1", ifelse(padj <= 0.1 & log2FoldChange > 0, "0","0")))
+
+OtAHF_geneList <- as.factor(OtAHF_upreg$F.upreg)
+names(OtAHF_geneList) <- OtAHF_upreg$gene
+summary(OtAHF_geneList)
+
+# build GOdata object
+OtAHF_GOdata <- new("topGOdata", description = "GO analysis of Otau AH Female upreg genes",
+                    ontology = "BP", allGenes = OtAHF_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
+OtAHF_weight_fisher_result=runTest(OtAHF_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+OtAHF_allGO=usedGO(OtAHF_GOdata) # generate table of results
+OtAHF_all_res=GenTable(OtAHF_GOdata, weightFisher=OtAHF_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtAHF_allGO))
+OtAHF_all_res$weightFisher <- as.numeric(OtAHF_all_res$weightFisher)
+OtAHF_results.table.p= OtAHF_all_res[which(OtAHF_all_res$weightFisher<=0.001),] #get list of significant GO terms
+dim(OtAHF_results.table.p) # 43
+
+### Ot AH male upreg ####
+OtAHM_upreg <- Ot_AH_MvF_gene %>% 
+  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
+head(OtAHM_upreg)
+OtAHM_geneList <- as.factor(OtAHM_upreg$M.upreg)
+names(OtAHM_geneList) <- OtAHM_upreg$gene
+OtAHM_GOdata <- new("topGOdata", description = "GO analysis of Otau AH Male upreg genes",
+                    ontology = "BP", allGenes = OtAHM_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
+OtAHM_weight_fisher_result=runTest(OtAHM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+OtAHM_allGO=usedGO(OtAHM_GOdata) # generate table of results
+OtAHM_all_res=GenTable(OtAHM_GOdata, weightFisher=OtAHM_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtAHM_allGO))
+OtAHM_all_res$weightFisher <- as.numeric(OtAHM_all_res$weightFisher)
+OtAHM_results.table.p= OtAHM_all_res[which(OtAHM_all_res$weightFisher<=0.001),] #get list of significant GO 
+dim(OtAHM_results.table.p) # 11
+
+### Ot G female upreg #####
+OtGF_upreg <- Ot_G_MvF_gene %>% 
+  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1", ifelse(padj <= 0.1 & log2FoldChange > 0, "0", "0")))
+
+OtGF_geneList <- as.factor(OtGF_upreg$F.upreg)
+names(OtGF_geneList) <- OtGF_upreg$gene
+summary(OtGF_geneList)
+
+OtGF_GOdata <- new("topGOdata", description = "GO analysis of Otau G Female upreg genes",
+                   ontology = "BP", allGenes = OtGF_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
+OtGF_weight_fisher_result=runTest(OtGF_GOdata, algorithm='weight01', statistic='fisher') # run test for significance 
+OtGF_allGO=usedGO(OtGF_GOdata) # generate table of results
+OtGF_all_res=GenTable(OtGF_GOdata, weightFisher=OtGF_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtGF_allGO))
+OtGF_all_res$weightFisher <- as.numeric(OtGF_all_res$weightFisher)
+OtGF_results.table.p= OtGF_all_res[which(OtGF_all_res$weightFisher<=0.001),] #get list of significant GO terms
+dim(OtGF_results.table.p) # 13
+
+### Ot G male upreg ####
+OtGM_upreg <- Ot_G_MvF_gene %>% 
+  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
+
+OtGM_geneList <- as.factor(OtGM_upreg$M.upreg)
+names(OtGM_geneList) <- OtGM_upreg$gene
+summary(OtGM_geneList) 
+
+OtGM_GOdata <- new("topGOdata", description = "GO analysis of Otau G Male upreg genes",
+                   ontology = "BP", allGenes = OtGM_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
+OtGM_weight_fisher_result=runTest(OtGM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+OtGM_allGO=usedGO(OtGM_GOdata) # generate table of results
+OtGM_all_res=GenTable(OtGM_GOdata, weightFisher=OtGM_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtGM_allGO))
+OtGM_all_res$weightFisher <- as.numeric(OtGM_all_res$weightFisher)
+OtGM_results.table.p= OtGM_all_res[which(OtGM_all_res$weightFisher<=0.001),] #get list of significant GO 
+dim(OtGM_results.table.p) # 9
+
+##### run O sagittarius tests ####
+### Os PH female upreg #####
+OsPHF_upreg <- Os_PH_MvF_gene %>% 
+  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1",
+                          ifelse(padj <= 0.1 & log2FoldChange > 0, "0",
+                                 "0")))
+
+OsPHF_geneList <- as.factor(OsPHF_upreg$F.upreg)
+names(OsPHF_geneList) <- OsPHF_upreg$gene
+summary(OsPHF_geneList) # gives # of genes of interest
+
+# build GOdata object
+OsPHF_GOdata <- new("topGOdata", description = "GO analysis of Osag PH Female upreg genes",
+                    ontology = "BP", allGenes = OsPHF_geneList, annot = annFUN.gene2GO, gene2GO = OsgeneID2GO, nodeSize = 5)
+
+# run test for significance using the weight01 algorithm (default) with fisher 
+OsPHF_weight_fisher_result=runTest(OsPHF_GOdata, algorithm='weight01', statistic='fisher') 
+
+# generate table of results
+OsPHF_allGO=usedGO(OsPHF_GOdata)
+OsPHF_all_res=GenTable(OsPHF_GOdata, weightFisher=OsPHF_weight_fisher_result, orderBy='weightFisher', topNodes=length(OsPHF_allGO))
+OsPHF_all_res$weightFisher <- as.numeric(OsPHF_all_res$weightFisher)
+
+#get list of significant GO terms
+OsPHF_results.table.p= OsPHF_all_res[which(OsPHF_all_res$weightFisher<=0.001),]
+dim(OsPHF_results.table.p) # 23
+
+### Os PH male upreg ####
+OsPHM_upreg <- Os_PH_MvF_gene %>% 
+  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
+
+OsPHM_geneList <- as.factor(OsPHM_upreg$M.upreg)
+names(OsPHM_geneList) <- OsPHM_upreg$gene
+OsPHM_GOdata <- new("topGOdata", description = "GO analysis of Osag PH Male upreg genes",
+                    ontology = "BP", allGenes = OsPHM_geneList, annot = annFUN.gene2GO, gene2GO = OsgeneID2GO, nodeSize = 5)
+
+OsPHM_weight_fisher_result=runTest(OsPHM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+OsPHM_allGO=usedGO(OsPHM_GOdata) # generate table of results
+OsPHM_all_res=GenTable(OsPHM_GOdata, weightFisher=OsPHM_weight_fisher_result, orderBy='weightFisher', topNodes=length(OsPHM_allGO))
+OsPHM_all_res$weightFisher <- as.numeric(OsPHM_all_res$weightFisher)
+
+OsPHM_results.table.p= OsPHM_all_res[which(OsPHM_all_res$weightFisher<=0.001),] #get list of significant GO 
+dim(OsPHM_results.table.p) # 2
+
+### Os AH female upreg ####
+OsAHF_upreg <- Os_AH_MvF_gene %>% 
+  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1", ifelse(padj <= 0.1 & log2FoldChange > 0, "0","0")))
+
+OsAHF_geneList <- as.factor(OsAHF_upreg$F.upreg)
+names(OsAHF_geneList) <- OsAHF_upreg$gene
+summary(OsAHF_geneList)
+
+# build GOdata object
+OsAHF_GOdata <- new("topGOdata", description = "GO analysis of Osag AH Female upreg genes",
+                    ontology = "BP", allGenes = OsAHF_geneList, annot = annFUN.gene2GO, gene2GO = OsgeneID2GO, nodeSize = 5)
+OsAHF_weight_fisher_result=runTest(OsAHF_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+OsAHF_allGO=usedGO(OsAHF_GOdata) # generate table of results
+OsAHF_all_res=GenTable(OsAHF_GOdata, weightFisher=OsAHF_weight_fisher_result, orderBy='weightFisher', topNodes=length(OsAHF_allGO))
+OsAHF_all_res$weightFisher <- as.numeric(OsAHF_all_res$weightFisher)
+OsAHF_results.table.p= OsAHF_all_res[which(OsAHF_all_res$weightFisher<=0.001),] #get list of significant GO terms
+dim(OsAHF_results.table.p) # 4
+
+### Os AH male upreg ####
+OsAHM_upreg <- Os_AH_MvF_gene %>% 
+  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
+OsAHM_geneList <- as.factor(OsAHM_upreg$M.upreg)
+names(OsAHM_geneList) <- OsAHM_upreg$gene
+
+OsAHM_GOdata <- new("topGOdata", description = "GO analysis of Osag AH Male upreg genes",
+                    ontology = "BP", allGenes = OsAHM_geneList, annot = annFUN.gene2GO, gene2GO = OsgeneID2GO, nodeSize = 5)
+OsAHM_weight_fisher_result=runTest(OsAHM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+OsAHM_allGO=usedGO(OsAHM_GOdata) # generate table of results
+OsAHM_all_res=GenTable(OsAHM_GOdata, weightFisher=OsAHM_weight_fisher_result, orderBy='weightFisher', topNodes=length(OsAHM_allGO))
+OsAHM_all_res$weightFisher <- as.numeric(OsAHM_all_res$weightFisher)
+OsAHM_results.table.p= OsAHM_all_res[which(OsAHM_all_res$weightFisher<=0.001),] #get list of significant GO 
+dim(OsAHM_results.table.p) # 0
+
+OsAHM_results.table.p0.05= OsAHM_all_res[which(OsAHM_all_res$weightFisher<=0.05),]
+dim(OsAHM_results.table.p0.05) # 49
+
+### Os G female upreg #####
+OsGF_upreg <- Os_G_MvF_gene %>% 
+  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1", ifelse(padj <= 0.1 & log2FoldChange > 0, "0", "0")))
+
+OsGF_geneList <- as.factor(OsGF_upreg$F.upreg)
+names(OsGF_geneList) <- OsGF_upreg$gene
+summary(OsGF_geneList)
+
+OsGF_GOdata <- new("topGOdata", description = "GO analysis of Osag G Female upreg genes",
+                   ontology = "BP", allGenes = OsGF_geneList, annot = annFUN.gene2GO, gene2GO = OsgeneID2GO, nodeSize = 5)
+OsGF_weight_fisher_result=runTest(OsGF_GOdata, algorithm='weight01', statistic='fisher') # run test for significance 
+OsGF_allGO=usedGO(OsGF_GOdata) # generate table of results
+OsGF_all_res=GenTable(OsGF_GOdata, weightFisher=OsGF_weight_fisher_result, orderBy='weightFisher', topNodes=length(OsGF_allGO))
+OsGF_all_res$weightFisher <- as.numeric(OsGF_all_res$weightFisher)
+OsGF_results.table.p= OsGF_all_res[which(OsGF_all_res$weightFisher<=0.001),] #get list of significant GO terms
+dim(OsGF_results.table.p) # 8
+
+### Os G male upreg ####
+OsGM_upreg <- Os_G_MvF_gene %>% 
+  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
+
+OsGM_geneList <- as.factor(OsGM_upreg$M.upreg)
+names(OsGM_geneList) <- OsGM_upreg$gene
+summary(OsGM_geneList) 
+
+OsGM_GOdata <- new("topGOdata", description = "GO analysis of Osag G Male upreg genes",
+                   ontology = "BP", allGenes = OsGM_geneList, annot = annFUN.gene2GO, gene2GO = OsgeneID2GO, nodeSize = 5)
+OsGM_weight_fisher_result=runTest(OsGM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+OsGM_allGO=usedGO(OsGM_GOdata) # generate table of results
+OsGM_all_res=GenTable(OsGM_GOdata, weightFisher=OsGM_weight_fisher_result, orderBy='weightFisher', topNodes=length(OsGM_allGO))
+OsGM_all_res$weightFisher <- as.numeric(OsGM_all_res$weightFisher)
+OsGM_results.table.p= OsGM_all_res[which(OsGM_all_res$weightFisher<=0.001),] #get list of significant GO 
+dim(OsGM_results.table.p) # 23
+
+##### run D gazella tests ####
+### Dg PH female upreg #####
+DgPHF_upreg <- Dg_PH_MvF_gene %>% 
+  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1",
+                          ifelse(padj <= 0.1 & log2FoldChange > 0, "0",
+                                 "0")))
+head(DgPHF_upreg)
+DgPHF_geneList <- as.factor(DgPHF_upreg$F.upreg)
+names(DgPHF_geneList) <- DgPHF_upreg$gene
+length(DgPHF_geneList) # total number of genes
+summary(DgPHF_geneList) # genes of interest
+
+# build GOdata object
+DgPHF_GOdata <- new("topGOdata", description = "GO analysis of Dgaz PH Female upreg genes", ontology = "BP", 
+                    allGenes = DgPHF_geneList, annot = annFUN.gene2GO, gene2GO = DggeneID2GO, nodeSize = 5)
+
+# run test for significance using the weight01 algorithm (default) with fisher 
+DgPHF_weight_fisher_result=runTest(DgPHF_GOdata, algorithm='weight01', statistic='fisher') 
+
+# generate table of results
+DgPHF_allGO=usedGO(DgPHF_GOdata)
+DgPHF_all_res=GenTable(DgPHF_GOdata, weightFisher=DgPHF_weight_fisher_result, orderBy='weightFisher', topNodes=length(DgPHF_allGO))
+DgPHF_all_res$weightFisher <- as.numeric(DgPHF_all_res$weightFisher)
+
+#get list of significant GO terms
+DgPHF_results.table.p= DgPHF_all_res[which(DgPHF_all_res$weightFisher<=0.001),]
+dim(DgPHF_results.table.p) # 9
+
+### Dg PH male upreg ####
+DgPHM_upreg <- Dg_PH_MvF_gene %>% 
+  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
+DgPHM_geneList <- as.factor(DgPHM_upreg$M.upreg)
+names(DgPHM_geneList) <- DgPHM_upreg$gene
+
+DgPHM_GOdata <- new("topGOdata", description = "GO analysis of Dgaz PH Male upreg genes",
+                    ontology = "BP", allGenes = DgPHM_geneList, annot = annFUN.gene2GO, gene2GO = DggeneID2GO, nodeSize = 5)
+DgPHM_weight_fisher_result=runTest(DgPHM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+DgPHM_allGO=usedGO(DgPHM_GOdata) # generate table of results
+DgPHM_all_res=GenTable(DgPHM_GOdata, weightFisher=DgPHM_weight_fisher_result, orderBy='weightFisher', topNodes=length(DgPHM_allGO))
+DgPHM_all_res$weightFisher <- as.numeric(DgPHM_all_res$weightFisher)
+DgPHM_results.table.p= DgPHM_all_res[which(DgPHM_all_res$weightFisher<=0.001),] #get list of significant GO 
+dim(DgPHM_results.table.p) # 0
+
+DgPHM_results.table.p0.05= DgPHM_all_res[which(DgPHM_all_res$weightFisher<=0.05),]
+dim(DgPHM_results.table.p0.05) # 100
+
+### Dg AH female upreg ####
+DgAHF_upreg <- Dg_AH_MvF_gene %>% 
+  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1", ifelse(padj <= 0.1 & log2FoldChange > 0, "0","0")))
+
+DgAHF_geneList <- as.factor(DgAHF_upreg$F.upreg)
+names(DgAHF_geneList) <- DgAHF_upreg$gene
+summary(DgAHF_geneList)
+
+DgAHF_GOdata <- new("topGOdata", description = "GO analysis of Dgaz AH Female upreg genes",
+                    ontology = "BP", allGenes = DgAHF_geneList, annot = annFUN.gene2GO, gene2GO = DggeneID2GO, nodeSize = 5)
+DgAHF_weight_fisher_result=runTest(DgAHF_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+DgAHF_allGO=usedGO(DgAHF_GOdata) # generate table of results
+DgAHF_all_res=GenTable(DgAHF_GOdata, weightFisher=DgAHF_weight_fisher_result, orderBy='weightFisher', topNodes=length(DgAHF_allGO))
+DgAHF_all_res$weightFisher <- as.numeric(DgAHF_all_res$weightFisher)
+DgAHF_results.table.p= DgAHF_all_res[which(DgAHF_all_res$weightFisher<=0.001),] #get list of significant GO terms
+dim(DgAHF_results.table.p) # 7
+
+### Dg AH male upreg ####
+DgAHM_upreg <- Dg_AH_MvF_gene %>% 
+  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
+DgAHM_geneList <- as.factor(DgAHM_upreg$M.upreg)
+names(DgAHM_geneList) <- DgAHM_upreg$gene
+
+DgAHM_GOdata <- new("topGOdata", description = "GO analysis of Dgaz AH Male upreg genes",
+                    ontology = "BP", allGenes = DgAHM_geneList, annot = annFUN.gene2GO, gene2GO = DggeneID2GO, nodeSize = 5)
+DgAHM_weight_fisher_result=runTest(DgAHM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+DgAHM_allGO=usedGO(DgAHM_GOdata) # generate table of results
+DgAHM_all_res=GenTable(DgAHM_GOdata, weightFisher=DgAHM_weight_fisher_result, orderBy='weightFisher', topNodes=length(DgAHM_allGO))
+DgAHM_all_res$weightFisher <- as.numeric(DgAHM_all_res$weightFisher)
+DgAHM_results.table.p= DgAHM_all_res[which(DgAHM_all_res$weightFisher<=0.001),] #get list of significant GO 
+dim(DgAHM_results.table.p) # 0
+
+DgAHM_results.table.p0.05= DgAHM_all_res[which(DgAHM_all_res$weightFisher<=0.05),] 
+dim(DgAHM_results.table.p0.05) # 38
+
+### Dg G female upreg #####
+DgGF_upreg <- Dg_G_MvF_gene %>% 
+  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1", ifelse(padj <= 0.1 & log2FoldChange > 0, "0", "0")))
+
+DgGF_geneList <- as.factor(DgGF_upreg$F.upreg)
+names(DgGF_geneList) <- DgGF_upreg$gene
+summary(DgGF_geneList)
+
+DgGF_GOdata <- new("topGOdata", description = "GO analysis of Dgaz G Female upreg genes",
+                   ontology = "BP", allGenes = DgGF_geneList, annot = annFUN.gene2GO, gene2GO = DggeneID2GO, nodeSize = 5)
+DgGF_weight_fisher_result=runTest(DgGF_GOdata, algorithm='weight01', statistic='fisher') # run test for significance 
+DgGF_allGO=usedGO(DgGF_GOdata) # generate table of results
+DgGF_all_res=GenTable(DgGF_GOdata, weightFisher=DgGF_weight_fisher_result, orderBy='weightFisher', topNodes=length(DgGF_allGO))
+DgGF_all_res$weightFisher <- as.numeric(DgGF_all_res$weightFisher)
+DgGF_results.table.p= DgGF_all_res[which(DgGF_all_res$weightFisher<=0.001),] #get list of significant GO terms
+dim(DgGF_results.table.p) # 22
+
+### Dg G male upreg ####
+DgGM_upreg <- Dg_G_MvF_gene %>% 
+  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
+
+DgGM_geneList <- as.factor(DgGM_upreg$M.upreg)
+names(DgGM_geneList) <- DgGM_upreg$gene
+summary(DgGM_geneList) 
+
+DgGM_GOdata <- new("topGOdata", description = "GO analysis of Dgaz G Male upreg genes",
+                   ontology = "BP", allGenes = DgGM_geneList, annot = annFUN.gene2GO, gene2GO = DggeneID2GO, nodeSize = 5)
+DgGM_weight_fisher_result=runTest(DgGM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
+DgGM_allGO=usedGO(DgGM_GOdata) # generate table of results
+DgGM_all_res=GenTable(DgGM_GOdata, weightFisher=DgGM_weight_fisher_result, orderBy='weightFisher', topNodes=length(DgGM_allGO))
+DgGM_all_res$weightFisher <- as.numeric(DgGM_all_res$weightFisher)
+DgGM_results.table.p= DgGM_all_res[which(DgGM_all_res$weightFisher<=0.001),] #get list of significant GO 
+dim(DgGM_results.table.p) # 12
+
 
 ###### Step 6: get gene annotations via UniProt best hits ####
-### read in protein best hits to Otau2.0 genome ####
-Otau3_prot_hits_clean <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau3_prot_hits_clean.txt")
-dim(Otau3_prot_hits_clean) # 242025 rows
-Otau3_prot_hits_clean$eval <- as.numeric(Otau3_prot_hits_clean$eval)
-Otau3_prot_hits_best <- Otau3_prot_hits_clean %>% 
-  group_by(OT3_ID) %>% 
-  top_n(-1,eval) %>% 
-  dplyr::slice(which.max(pident))
-dim(Otau3_prot_hits_best) # 16055 rows
+### read in protein best hits to Otau2.0 genome with annotations
+Otau3_prot_hits <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau_OT2_top5_hits.txt")
+dim(Otau3_prot_hits) # 242025 rows
+head(Otau3_prot_hits)
+Otau3_prot_hits_best <- Otau3_prot_hits %>% 
+  group_by(Otau_ID) %>% 
+  top_n(-1,OT2_evalue) %>% 
+  dplyr::slice(which.max(OT2_pident))
+head(Otau3_prot_hits_best)
 
-Dgaz1_prot_hits_clean <- read.delim("/Users/ericanadolski/Documents/Genomes/Dgaz1/Dgaz1_prot_hits_clean.txt")
-Dgaz1_prot_hits_clean$eval <- as.numeric(Dgaz1_prot_hits_clean$eval)
-Dgaz1_prot_hits_best <- Dgaz1_prot_hits_clean %>% 
-  group_by(DG3_ID) %>% 
-  top_n(-1,eval) %>% 
-  dplyr::slice(which.max(pident))
+Dgaz1_prot_hits <- read.delim("/Users/ericanadolski/Documents/Genomes/Dgaz1/Dgaz_OT2_top5_hits.txt")
+Dgaz1_prot_hits_best <- Dgaz1_prot_hits %>% 
+  group_by(Dgaz_ID) %>% 
+  top_n(-1,OT2_evalue) %>% 
+  dplyr::slice(which.max(OT2_pident))
 
-Osag1_prot_hits_clean <- read.delim("/Users/ericanadolski/Documents/Genomes/Osag1/Osag1_prot_hits_clean.txt")
-Osag1_prot_hits_clean$eval <- as.numeric(Osag1_prot_hits_clean$eval)
-Osag1_prot_hits_best <- Osag1_prot_hits_clean %>% 
-  group_by(OS1_ID) %>% 
-  top_n(-1,eval) %>% 
-  dplyr::slice(which.max(pident))
 
-### combine with annotations from Otau2 genome  ######
-Otau2_prot_names <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau2_prot_names.txt")
+Osag1_prot_hits <- read.delim("/Users/ericanadolski/Documents/Genomes/Osag1/Osag_OT2_top5_hits.txt")
+Osag1_prot_hits_best <- Osag1_prot_hits %>% 
+  group_by(Osag_ID) %>% 
+  top_n(-1,OT2_evalue) %>% 
+  dplyr::slice(which.max(OT2_pident))
 
-Otau3_prot_anno <- left_join(Otau3_prot_hits_best, Otau2_prot_names)
-colnames(Otau3_prot_anno)<- c("gene", "OT2_ID", "pident", "eval", "OT2_description")
-
-Dgaz1_prot_anno <- left_join(Dgaz1_prot_hits_best, Otau2_prot_names)
-colnames(Dgaz1_prot_anno)<- c("gene", "OT2_ID", "pident", "eval", "OT2_description")
-
-Osag1_prot_anno <- left_join(Osag1_prot_hits_best, Otau2_prot_names)
-colnames(Osag1_prot_anno)<- c("gene", "OT2_ID", "pident", "evalue","eval", "OT2_description")
+dim(Otau3_prot_hits_best) # 17332 rows
+dim(Dgaz1_prot_hits_best) # 19672 rows
+dim(Osag1_prot_hits_best) # 16935 rows
 
 ### read in UniProt annotations ####
 # go terms dataframe has Protein.names annotation
@@ -1074,6 +1452,186 @@ deg_Os_G_MvF_anno <- left_join(deg_Os_G_MvF, Osag1_prot_anno, by="gene")
 deg_Dg_PH_MvF_anno <- left_join(deg_Dg_PH_MvF, Dgaz1_prot_anno, by="gene")
 deg_Dg_AH_MvF_anno <- left_join(deg_Dg_AH_MvF, Dgaz1_prot_anno, by="gene")
 deg_Dg_G_MvF_anno <- left_join(deg_Dg_G_MvF, Dgaz1_prot_anno, by="gene")
+
+### Step 6.5: assign orthologs across genomes ######
+### import Orthofinder analyses
+orthogroup_count <- read.delim("/Users/ericanadolski/Documents/Sexual_dimorphism_project/Orthofinder/prot_results_May01/Orthogroups/Orthogroups.GeneCount.tsv")
+
+head(orthogroup_count)
+nrow(orthogroup_count)
+
+orthogroup_counts <- orthogroup_count %>%
+  filter(Dgaz <= 1,
+         Osag <= 1,
+         Otau <= 1)
+nrow(orthogroup_counts)
+
+orthogroup_IDs_full <- read.delim("/Users/ericanadolski/Desktop/beetle-sex-dimorph/Orthogroups.tsv")
+
+orthogroup_IDs <- orthogroup_counts %>% 
+  left_join(orthogroup_IDs_full, by = "Orthogroup") %>%
+  dplyr::select(Orthogroup, Dgaz.y, Osag.y, Otau.y) %>%
+  mutate_all(list(~na_if(.,"")))
+nrow(orthogroup_IDs)
+
+# clean in BBEdit
+write.table(orthogroup_IDs, 
+            file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogroup_IDs.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+orthogroup_IDs_final <- read.delim("/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogroup_IDs_final.txt")
+
+# prep DGE columns 
+Ot_PH_MvF_gene <- dplyr::rename(Ot_PH_MvF_gene, OtPH_upreg = upreg)
+Ot_AH_MvF_gene <- dplyr::rename(Ot_AH_MvF_gene, OtAH_upreg = upreg)
+Ot_G_MvF_gene <- dplyr::rename(Ot_G_MvF_gene, OtG_upreg = upreg)
+
+Os_PH_MvF_gene <- dplyr::rename(Os_PH_MvF_gene, OsPH_upreg = upreg)
+Os_AH_MvF_gene <- dplyr::rename(Os_AH_MvF_gene, OsAH_upreg = upreg)
+Os_G_MvF_gene <- dplyr::rename(Os_G_MvF_gene, OsG_upreg = upreg)
+
+Dg_PH_MvF_gene <- dplyr::rename(Dg_PH_MvF_gene, DgPH_upreg = upreg)
+Dg_AH_MvF_gene <- dplyr::rename(Dg_AH_MvF_gene, DgAH_upreg = upreg)
+Dg_G_MvF_gene <- dplyr::rename(Dg_G_MvF_gene, DgG_upreg = upreg)
+
+
+orthogrp_sex_res_PH <- orthogroup_IDs_final %>%
+  full_join(Ot_PH_MvF_gene, by = c("Otau" = "gene")) %>%
+  full_join(Os_PH_MvF_gene, by = c("Osag" = "gene")) %>%
+  full_join(Dg_PH_MvF_gene, by = c("Dgaz" = "gene")) %>%
+  dplyr::select(Orthogroup,Otau,Dgaz,Osag,OtPH_upreg,OsPH_upreg,DgPH_upreg)
+
+colSums(is.na(orthogrp_sex_res_PH))
+
+orthogrp_sex_res_AH <- orthogroup_IDs_final %>%
+  full_join(Ot_AH_MvF_gene, by = c("Otau" = "gene")) %>%
+  full_join(Os_AH_MvF_gene, by = c("Osag" = "gene")) %>%
+  full_join(Dg_AH_MvF_gene, by = c("Dgaz" = "gene")) %>%
+  dplyr::select(Orthogroup,Otau,Dgaz,Osag,OtAH_upreg,OsAH_upreg,DgAH_upreg)
+
+orthogrp_sex_res_G <- orthogroup_IDs_final %>%
+  full_join(Ot_G_MvF_gene, by = c("Otau" = "gene")) %>%
+  full_join(Os_G_MvF_gene, by = c("Osag" = "gene")) %>%
+  full_join(Dg_G_MvF_gene, by = c("Dgaz" = "gene")) %>%
+  dplyr::select(Orthogroup,Otau,Dgaz,Osag,OtG_upreg,OsG_upreg,DgG_upreg)
+
+
+write.table(orthogrp_sex_res_PH, 
+            file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogrp_sex_res_PH.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+write.table(orthogrp_sex_res_AH, 
+            file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogrp_sex_res_AH.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+write.table(orthogrp_sex_res_G, 
+            file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogrp_sex_res_G.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+### parsing out the gene set totals #####
+### POSTERIOR HEAD ####
+### lineage-specific ####
+nrow(orthogrp_sex_res_PH %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgPH_upreg=="F")) 
+# lineage-specific Dgaz F PH upreg genes = 23
+
+nrow(orthogrp_sex_res_PH %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgPH_upreg=="M")) 
+# lineage-specific Dgaz M PH upreg genes = 34
+
+nrow(orthogrp_sex_res_PH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsPH_upreg=="F")) 
+# lineage-specific Osag F PH upreg genes = 43
+
+nrow(orthogrp_sex_res_PH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsPH_upreg=="M")) 
+# lineage-specific Osag M PH upreg genes = 103
+
+nrow(orthogrp_sex_res_PH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtPH_upreg=="F")) 
+# lineage-specific Otau F PH upreg genes = 233
+
+nrow(orthogrp_sex_res_PH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtPH_upreg=="M")) 
+# lineage-specific Otau M PH upreg genes = 205
+
+### shared ####
+nrow(orthogrp_sex_res_PH %>% filter(OtPH_upreg=="F") %>% filter(DgPH_upreg=="F")  %>% filter(OsPH_upreg=="F"))
+# all 3 shared F PH upreg genes = 3
+
+nrow(full_sex_res_PH %>% filter(OtPH_upreg=="F") %>% filter(OsPH_upreg=="F")) 
+# Otau + Osag shared F PH upreg genes = 14
+
+nrow(full_sex_res_PH %>% filter(DgPH_upreg=="F") %>% filter(OsPH_upreg=="F")) 
+# Dgaz + Osag shared F PH upreg genes = 6
+
+nrow(full_sex_res_PH %>% filter(OtPH_upreg=="F") %>% filter(DgPH_upreg=="F")) 
+# Dgaz + Otau shared F PH upreg genes = 11
+
+### posterior horn-promoting gene sets ###
+nrow(full_sex_res_PH %>% filter(OtPH_upreg=="M") %>% filter(DgPH_upreg=="M")  %>% filter(OsPH_upreg=="F")) # 1
+
+### GENITALIA ####
+### lineage-specific ####
+nrow(full_sex_res_G %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgG_upreg=="F")) 
+# lineage-specific Dgaz F G upreg genes = 178
+
+nrow(full_sex_res_G %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgG_upreg=="M")) 
+# lineage-specific Dgaz M G upreg genes = 138
+
+nrow(full_sex_res_G %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsG_upreg=="F")) 
+# lineage-specific Osag F G upreg genes = 353
+
+nrow(full_sex_res_G %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsG_upreg=="M")) 
+# lineage-specific Osag M G upreg genes = 110
+
+nrow(full_sex_res_G %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtG_upreg=="F")) 
+# lineage-specific Otau F G upreg genes = 277
+
+nrow(full_sex_res_G %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtG_upreg=="M")) 
+# lineage-specific Otau M G upreg genes = 103
+
+### shared ####
+# female
+nrow(full_sex_res_G %>% filter(OtG_upreg=="F") %>% filter(DgG_upreg=="F")  %>% filter(OsG_upreg=="F")) # 15
+
+nrow(full_sex_res_G %>% filter(OtG_upreg=="F") %>% filter(OsG_upreg=="F")) # 70
+
+nrow(full_sex_res_G %>% filter(DgG_upreg=="F") %>% filter(OsG_upreg=="F")) # 68
+
+nrow(full_sex_res_G %>% filter(OtG_upreg=="F") %>% filter(DgG_upreg=="F")) # 85
+
+# male
+nrow(full_sex_res_G %>% filter(OtG_upreg=="M") %>% filter(DgG_upreg=="M")  %>% filter(OsG_upreg=="M"))# all 3 shared = 18
+
+nrow(full_sex_res_G %>% filter(OtG_upreg=="M") %>% filter(OsG_upreg=="M")) # 55
+
+nrow(full_sex_res_G %>% filter(DgG_upreg=="M") %>% filter(OsG_upreg=="M")) # 48
+
+nrow(full_sex_res_G %>% filter(OtG_upreg=="M") %>% filter(DgG_upreg=="M")) # 66
+
+### ANTERIOR HEAD ####
+### lineage-specific ####
+nrow(full_sex_res_AH %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgAH_upreg=="F")) 
+# lineage-specific Dgaz F AH upreg genes = 34
+
+nrow(full_sex_res_AH %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgAH_upreg=="M")) 
+# lineage-specific Dgaz M AH upreg genes = 23
+
+nrow(full_sex_res_AH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsAH_upreg=="F")) 
+# lineage-specific Osag F AH upreg genes = 103
+
+nrow(full_sex_res_AH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsAH_upreg=="M")) 
+# lineage-specific Osag M AH upreg genes = 43
+
+nrow(full_sex_res_AH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtAH_upreg=="F")) 
+# lineage-specific Otau F AH upreg genes = 234
+
+nrow(full_sex_res_AH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtAH_upreg=="M")) 
+# lineage-specific Otau M AH upreg genes = 205
+
+### shared ####
+nrow(full_sex_res_AH %>% filter(OtAH_upreg=="F") %>% filter(DgAH_upreg=="F")  %>% filter(OsAH_upreg=="F"))
+# all 3 shared F AH upreg genes = 0
+
+nrow(full_sex_res_AH %>% filter(OtAH_upreg=="F") %>% filter(OsAH_upreg=="F")) 
+# Otau + Osag shared F AH upreg genes = 10
+
+nrow(full_sex_res_AH %>% filter(DgAH_upreg=="F") %>% filter(OsAH_upreg=="F")) 
+# Dgaz + Osag shared F AH upreg genes = 0
+
+nrow(full_sex_res_AH %>% filter(OtAH_upreg=="F") %>% filter(DgAH_upreg=="F")) 
+# Dgaz + Otau shared F AH upreg genes = 0
 
 ###### Step 7: export sex-responsive genes ####
 ### Otau ####
@@ -1230,154 +1788,6 @@ write.table(deg_Os_G_F_up,
             file = "./GitHub/Beetle-sexual-dimorphism/Os_G_F_up.txt",
             sep = "\t", quote = FALSE, row.names = FALSE)
 
-##### Step 8: GO term enrichment ###########
-##### O taurus ####
-### generate gene to GO mapping by joining table of O. taurus UniProt BLAST hits to UniProt GO table ######
-Ot_uniprot_hits <- read_delim("/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Ot-uniprot-blast-hits.txt", col_names = c("gene","Entry.Name"))
-# uniprot GO database
-uniprot_go <- read.delim("/Users/ericanadolski/Documents/Sexual_dimorphism_project/GO_enrich/uniprot_reviewed_db.tsv")
-Ot_go_terms_full <- left_join(Ot_uniprot_hits, uniprot_go, by="Entry.Name") 
-Ot_go_terms <- Ot_go_terms_full %>% dplyr::select(gene, Gene.Ontology.IDs)
-head(Ot_go_terms)
-write.table(Ot_go_terms, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Ot_go_terms.txt", sep = "\t", quote = FALSE, row.names = FALSE,)
-
-# reformat to geneID2GO in BBEdit
-
-### read in custom Otau GO annotations in geneID2GO format ####
-OtgeneID2GO <- readMappings(file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/go_enrich/Ot_go_terms.txt")
-str(head(OtgeneID2GO))
-
-# provide predefined list of genes of interest as factor (0,1) for each trait and sex
-# for each trait run separate GO analyses for female-upregulated genes and male-upregulated genes
-
-### Ot PH female upreg #####
-OtPHF_upreg <- Ot_PH_MvF_gene %>% 
-  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1",
-                          ifelse(padj <= 0.1 & log2FoldChange > 0, "0",
-                                 "0")))
-head(OtPHF_upreg)
-OtPHF_geneList <- as.factor(OtPHF_upreg$F.upreg)
-names(OtPHF_geneList) <- OtPHF_upreg$gene
-length(OtPHF_geneList) # total number of genes
-summary(OtPHF_geneList) # gives # of genes of interest
-
-# build GOdata object
-OtPHF_GOdata <- new("topGOdata",
-                    description = "GO analysis of Otau PH Female upreg genes",
-                    ontology = "BP", 
-                    allGenes = OtPHF_geneList, 
-                    annot = annFUN.gene2GO, 
-                    gene2GO = OtgeneID2GO, 
-                    nodeSize = 5)
-
-# run test for significance using the weight01 algorithm (default) with fisher 
-OtPHF_weight_fisher_result=runTest(OtPHF_GOdata, algorithm='weight01', statistic='fisher') 
-
-# generate table of results
-OtPHF_allGO=usedGO(OtPHF_GOdata)
-OtPHF_all_res=GenTable(OtPHF_GOdata, weightFisher=OtPHF_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtPHF_allGO))
-OtPHF_all_res$weightFisher <- as.numeric(OtPHF_all_res$weightFisher)
-
-#get list of significant GO terms
-OtPHF_results.table.p= OtPHF_all_res[which(OtPHF_all_res$weightFisher<=0.001),]
-dim(OtPHF_results.table.p) # 10
-
-### Ot PH male upreg ####
-OtPHM_upreg <- Ot_PH_MvF_gene %>% 
-  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
-
-OtPHM_geneList <- as.factor(OtPHM_upreg$M.upreg)
-names(OtPHM_geneList) <- OtPHM_upreg$gene
-OtPHM_GOdata <- new("topGOdata", description = "GO analysis of Otau PH Male upreg genes",
-                   ontology = "BP", allGenes = OtPHM_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
-
-OtPHM_weight_fisher_result=runTest(OtPHM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
-
-OtPHM_allGO=usedGO(OtPHM_GOdata) # generate table of results
-OtPHM_all_res=GenTable(OtPHM_GOdata, weightFisher=OtPHM_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtPHM_allGO))
-OtPHM_all_res$weightFisher <- as.numeric(OtPHM_all_res$weightFisher)
-
-OtPHM_results.table.p= OtPHM_all_res[which(OtPHM_all_res$weightFisher<=0.001),] #get list of significant GO 
-dim(OtPHM_results.table.p) # 15
-
-### Ot AH female upreg ####
-OtAHF_upreg <- Ot_AH_MvF_gene %>% 
-  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1", ifelse(padj <= 0.1 & log2FoldChange > 0, "0","0")))
-
-OtAHF_geneList <- as.factor(OtAHF_upreg$F.upreg)
-names(OtAHF_geneList) <- OtAHF_upreg$gene
-summary(OtAHF_geneList)
-
-# build GOdata object
-OtAHF_GOdata <- new("topGOdata", description = "GO analysis of Otau AH Female upreg genes",
-                    ontology = "BP", allGenes = OtAHF_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
-
-OtAHF_weight_fisher_result=runTest(OtAHF_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
-
-OtAHF_allGO=usedGO(OtAHF_GOdata) # generate table of results
-OtAHF_all_res=GenTable(OtAHF_GOdata, weightFisher=OtAHF_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtAHF_allGO))
-OtAHF_all_res$weightFisher <- as.numeric(OtAHF_all_res$weightFisher)
-
-OtAHF_results.table.p= OtAHF_all_res[which(OtAHF_all_res$weightFisher<=0.001),] #get list of significant GO terms
-dim(OtAHF_results.table.p) # 22
-
-### Ot AH male upreg ####
-OtAHM_upreg <- Ot_AH_MvF_gene %>% 
-  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
-head(OtAHM_upreg)
-OtAHM_geneList <- as.factor(OtAHM_upreg$M.upreg)
-names(OtAHM_geneList) <- OtAHM_upreg$gene
-OtAHM_GOdata <- new("topGOdata", description = "GO analysis of Otau AH Male upreg genes",
-                    ontology = "BP", allGenes = OtAHM_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
-
-OtAHM_weight_fisher_result=runTest(OtAHM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
-
-OtAHM_allGO=usedGO(OtAHM_GOdata) # generate table of results
-OtAHM_all_res=GenTable(OtAHM_GOdata, weightFisher=OtAHM_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtAHM_allGO))
-OtAHM_all_res$weightFisher <- as.numeric(OtAHM_all_res$weightFisher)
-
-OtAHM_results.table.p= OtAHM_all_res[which(OtAHM_all_res$weightFisher<=0.001),] #get list of significant GO 
-dim(OtAHM_results.table.p) # 11
-
-### Ot G female upreg #####
-OtGF_upreg <- Ot_G_MvF_gene %>% 
-  mutate(F.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "1", ifelse(padj <= 0.1 & log2FoldChange > 0, "0", "0")))
-
-OtGF_geneList <- as.factor(OtGF_upreg$F.upreg)
-names(OtGF_geneList) <- OtGF_upreg$gene
-summary(OtGF_geneList) # gives # of genes of interest
-
-OtGF_GOdata <- new("topGOdata", description = "GO analysis of Otau G Female upreg genes",
-                   ontology = "BP", allGenes = OtGF_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
-
-OtGF_weight_fisher_result=runTest(OtGF_GOdata, algorithm='weight01', statistic='fisher') # run test for significance 
-
-OtGF_allGO=usedGO(OtGF_GOdata) # generate table of results
-OtGF_all_res=GenTable(OtGF_GOdata, weightFisher=OtGF_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtGF_allGO))
-OtGF_all_res$weightFisher <- as.numeric(OtGF_all_res$weightFisher)
-
-OtGF_results.table.p= OtGF_all_res[which(OtGF_all_res$weightFisher<=0.001),] #get list of significant GO terms
-dim(OtGF_results.table.p) # 15
-
-### Ot G male upreg ####
-OtGM_upreg <- Ot_G_MvF_gene %>% 
-  mutate(M.upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "0", ifelse(padj <= 0.1 & log2FoldChange > 0, "1", "0")))
-
-OtGM_geneList <- as.factor(OtGM_upreg$M.upreg)
-names(OtGM_geneList) <- OtGM_upreg$gene
-summary(OtGM_geneList) # gives # of genes of interest
-OtGM_GOdata <- new("topGOdata", description = "GO analysis of Otau G Male upreg genes",
-                   ontology = "BP", allGenes = OtGM_geneList, annot = annFUN.gene2GO, gene2GO = OtgeneID2GO, nodeSize = 5)
-
-OtGM_weight_fisher_result=runTest(OtGM_GOdata, algorithm='weight01', statistic='fisher') # run test for significance
-
-OtGM_allGO=usedGO(OtGM_GOdata) # generate table of results
-OtGM_all_res=GenTable(OtGM_GOdata, weightFisher=OtGM_weight_fisher_result, orderBy='weightFisher', topNodes=length(OtGM_allGO))
-OtGM_all_res$weightFisher <- as.numeric(OtGM_all_res$weightFisher)
-
-OtGM_results.table.p= OtGM_all_res[which(OtGM_all_res$weightFisher<=0.001),] #get list of significant GO 
-dim(OtGM_results.table.p) # 9
-
 ###### Step 9: Plotting doublesex expression levels #####
 #### used updated GTF/fasta salmon pseudomapping run
 ### O taurus ####
@@ -1464,22 +1874,19 @@ Os_info_ATAC <- read.delim("/Users/ericanadolski/GitHub/Onthophagus_sexual_dimor
 # Dgaz
 Dg_OCR_counts <- read.delim("/Users/ericanadolski/GitHub/Onthophagus_sexual_dimorphism/Dg_peak_counts.txt", header=TRUE)
 Dg_info_ATAC <- read.delim("/Users/ericanadolski/GitHub/Onthophagus_sexual_dimorphism/Dg_sample_info_table.txt")
-Dg_info <- Dg_info %>% mutate(Sex_Trait = paste0(Sex, "_", Trait),
-                              Species_Sex = paste0(Species, "_", Sex),
-                              Species_Trait = paste0(Species, "_", Trait),) 
 
 ###### Step 2: normalize X chromosome counts and filter out low read counts #####
-# write function to multiply by 2
+# write function to multiply by 2 ####
 double <- function(observed) {
   result <- (observed * 2)
-}
+} 
 
 ### Otau ######
 # subset out X chromosome rows
 Ot_OCR_counts_X <- Ot_OCR_counts %>% filter(chr == "Scaffold8")
 
 # subset female columns of X
-Ot_OCR_counts_X_F <- Ot_OCR_counts_X[,5:19]
+Ot_OCR_counts_X_F <- Ot_OCR_counts_X[,1:19]
 
 # subset male columns and multiply read counts by 2 to normalize
 Ot_OCR_counts_X_M_2 <- Ot_OCR_counts_X[,20:34] %>% mutate_all(list(double))
@@ -1492,10 +1899,10 @@ Ot_OCR_counts_norm <- Ot_OCR_counts %>% filter(!chr == "Scaffold8")
 Ot_OCR_counts_norm <- rbind(Ot_OCR_counts_norm, Ot_OCR_counts_X_norm)
 
 # filter out OCRs with extremely low read counts 
-cpm_Ot_norm <- cpm(Ot_OCR_counts_norm[c(5:34)]) # 148192
+cpm_Ot_norm <- cpm(Ot_OCR_counts_norm[c(5:34)]) # 153897 OCRs
 countcheck_Ot_norm <- cpm_Ot_norm > 3
 keep_Ot_norm <- which(rowSums(countcheck_Ot_norm) >= 5)
-Ot_filtered_OCR_counts_norm <- Ot_OCR_counts_norm[keep_Ot_norm,] # 79738 OCRs
+Ot_filtered_OCR_counts_norm <- Ot_OCR_counts_norm[keep_Ot_norm,] # 78826 OCRs
 
 ### Osag ####
 ## subset out X chromosome rows
@@ -2456,7 +2863,7 @@ bar_plot_OCR <-ggplot(data=DA_peak_numbers, aes(x=species, y=DA_peaks, fill=sex)
 #coord_flip()
 bar_plot_OCR
 
-ggsave(bar_plot_OCR, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/bar_plot_OCR.pdf", width = 8, height = 5)
+ggsave(bar_plot_OCR, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/bar_plot_OCR.pdf", width = 10, height = 5)
 
 ###### Step 5.5: differential accessibility across traits - needed for paper? ########
 ### Osag both sexes, trait responsive  ######
@@ -3121,63 +3528,62 @@ write.table(OtM_AHPH_anno_sig_AH_up,
 
 ###### Step 9: export results ######
 ### export separate male open and female open OCR list for motif enrichment analysis ########
-OtPH_sex_anno_sig_F_up <- OtPH_sex_anno_sig %>%
-  filter(DA == "F") %>% 
-  mutate(mid = (end-start)/2 + start)
+### Dgaz 
+Dg_PH_F_up <- Dg_PH_MvF_OCR %>% filter(DA == "F")
+write.table(Dg_PH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgPH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-OtPH_sex_anno_sig_M_up <- OtPH_sex_anno_sig %>%
-  filter(DA == "M") %>% 
-  mutate(mid = (end-start)/2 + start)
+Dg_PH_M_up <- Dg_PH_MvF_OCR %>% filter(DA == "M")
+write.table(Dg_PH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgPH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-write.table(OtPH_sex_anno_sig_F_up, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtPH_peaks_F_up.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
+Dg_AH_F_up <- Dg_AH_MvF_OCR %>% filter(DA == "F")
+write.table(Dg_AH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgAH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-write.table(OtPH_sex_anno_sig_M_up, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtPH_peaks_M_up.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
+Dg_AH_M_up <- Dg_AH_MvF_OCR %>% filter(DA == "M")
+write.table(Dg_AH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgAH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-OtAH_sex_anno_sig_F_up <- OtAH_sex_anno_sig %>%
-  filter(DA == "F") %>% 
-  mutate(mid = (end-start)/2 + start)
+Dg_G_F_up <- Dg_G_MvF_OCR %>% filter(DA == "F")
+write.table(Dg_G_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgG_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-OtAH_sex_anno_sig_M_up <- OtAH_sex_anno_sig %>%
-  filter(DA == "M") %>% 
-  mutate(mid = (end-start)/2 + start)
+Dg_G_M_up <- Dg_G_MvF_OCR %>% filter(DA == "M")
+write.table(Dg_G_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgG_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-write.table(OtAH_sex_anno_sig_F_up, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtAH_peaks_F_up.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
+### Otau
+Ot_PH_F_up <- Ot_PH_MvF_OCR %>% filter(DA == "F")
+write.table(Ot_PH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtPH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-write.table(OtAH_sex_anno_sig_M_up, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtAH_peaks_M_up.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
+Ot_PH_M_up <- Ot_PH_MvF_OCR %>% filter(DA == "M")
+write.table(Ot_PH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtPH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-OtL_sex_anno_sig_F_up <- OtL_sex_anno_sig %>%
-  filter(DA == "F") %>% 
-  mutate(mid = (end-start)/2 + start)
+Ot_AH_F_up <- Ot_AH_MvF_OCR %>% filter(DA == "F")
+write.table(Ot_AH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtAH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-OtL_sex_anno_sig_M_up <- OtL_sex_anno_sig %>%
-  filter(DA == "M") %>% 
-  mutate(mid = (end-start)/2 + start)
+Ot_AH_M_up <- Ot_AH_MvF_OCR %>% filter(DA == "M")
+write.table(Ot_AH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtAH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-write.table(OtL_sex_anno_sig_F_up, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtL_peaks_F_up.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
+Ot_G_F_up <- Ot_G_MvF_OCR %>% filter(DA == "F")
+write.table(Ot_G_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtG_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-write.table(OtL_sex_anno_sig_M_up, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtL_peaks_M_up.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
+Ot_G_M_up <- Ot_G_MvF_OCR %>% filter(DA == "M")
+write.table(Ot_G_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtG_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-target <- c("Scaffold_1", "Scaffold_4")
-Os_sex_res_common_M_chrs14 <- Os_sex_res_common %>%
-  filter(chr %in% target) %>% 
-  mutate(mid = (end-start)/2 + start) 
+### Osag 
+Os_PH_F_up <- Os_PH_MvF_OCR %>% filter(DA == "F")
+write.table(Os_PH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsPH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-Os_sex_res_common_M_chrs14 <- Os_sex_res_common_M_chrs14[, c("chr", "start", "end", "peak", "mid")]
-write.table(Os_sex_res_common_M_chrs14, 
-            file = "./GitHub/Beetle-sexual-dimorphism/Os_sex_res_common_M_up.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
+Os_PH_M_up <- Os_PH_MvF_OCR %>% filter(DA == "M")
+write.table(Os_PH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsPH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+Os_AH_F_up <- Os_AH_MvF_OCR %>% filter(DA == "F")
+write.table(Os_AH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsAH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+Os_AH_M_up <- Os_AH_MvF_OCR %>% filter(DA == "M")
+write.table(Os_AH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsAH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+Os_G_F_up <- Os_G_MvF_OCR %>% filter(DA == "F")
+write.table(Os_G_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsG_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+Os_G_M_up <- Os_G_MvF_OCR %>% filter(DA == "M")
+write.table(Os_G_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsG_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 ### export annotated significant peak tables ######
 #Otau
