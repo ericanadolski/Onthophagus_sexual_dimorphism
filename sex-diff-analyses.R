@@ -1,16 +1,15 @@
 ##### load packages######
-library(plyr)
-library(tidyverse)
 library(tximport)
 library(DESeq2)
-library(ggplot2)
 library(pheatmap)
+library(ggplot2)
 library(ggbreak)
 library(gplots)
 library(edgeR)
 library(stats)
 library(topGO)
 library(RColorBrewer)
+library(tidyverse)
 # I. RNAseq data analyses #############################################################################
 ###### Step 1: import RNAseq read abundance from salmon #####
 ### O taurus ######
@@ -48,6 +47,7 @@ Os_counts <- as.data.frame(Os_salmon_tx$counts)
 colnames(Os_counts) <- Os_RNA_info$Sample
 ### D gazella #####
 Dg_RNA_info <- read.table("/Users/ericanadolski/GitHub/Onthophagus_sexual_dimorphism/Dg-RNA-sample-info.txt", header=TRUE)
+Dg_RNA_info <- Dg_RNA_info %>% mutate(Sex_Trait = paste(Sex, Trait, sep = "_"))
 path <- file.path("/Volumes/T7_Drive_2/RNAseq/salmon-dsx", paste0(Dg_RNA_info$Sample, "_quant/quant.sf")) 
 file.exists(path)
 
@@ -454,7 +454,7 @@ Ot_dds <- DESeq(Ot_dds)
 
 # save normalized counts output
 Ot_norm_counts <- counts(Ot_dds, normalized=TRUE)
-colnames(Ot_norm_counts) <- Ot_RNA_info$Sample
+colnames(Ot_norm_counts) <- Ot_RNA_info$Sampletermina
 
 ### perform LFC shrink on results 
 Ot_dds_shrink <- DESeq(Ot_dds, betaPrior=TRUE)
@@ -567,6 +567,52 @@ Dg_G_MvF_gene <- as.data.frame(results(Dg_dds_shrink, contrast=c("group","MG","F
 Dg_G_MvF_gene <- rownames_to_column(Dg_G_MvF_gene)
 names(Dg_G_MvF_gene)[1] <- "gene"
 deg_Dg_G_MvF <- Dg_G_MvF_gene %>% filter(padj <= 0.1)
+
+### annotate upregulated, ns genes ####
+Dg_PH_MvF_gene <- Dg_PH_MvF_gene %>% 
+  mutate(PH_upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                          ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                                 "ns")))
+
+Dg_AH_MvF_gene <- Dg_AH_MvF_gene %>% 
+  mutate(AH_upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                          ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                                 "ns")))
+
+Dg_G_MvF_gene <- Dg_G_MvF_gene %>% 
+  mutate(G_upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                           ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                                  "ns")))
+
+Os_PH_MvF_gene <- Os_PH_MvF_gene %>% 
+  mutate(PH_upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                           ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                                  "ns")))
+
+Os_AH_MvF_gene <- Os_AH_MvF_gene %>% 
+  mutate(AH_upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                           ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                                  "ns")))
+
+Os_G_MvF_gene <- Os_G_MvF_gene %>% 
+  mutate(G_upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                          ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                                 "ns")))
+
+Ot_PH_MvF_gene <- Ot_PH_MvF_gene %>% 
+  mutate(PH_upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                           ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                                  "ns")))
+
+Ot_AH_MvF_gene <- Ot_AH_MvF_gene %>% 
+  mutate(AH_upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                           ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                                  "ns")))
+
+Ot_G_MvF_gene <- Ot_G_MvF_gene %>% 
+  mutate(G_upreg = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                          ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                                 "ns")))
 
 ###### Step 4: plotting differential gene expression results #####
 ### O taurus ####
@@ -1410,8 +1456,8 @@ dim(DgGM_results.table.p) # 12
 
 ###### Step 6: get gene annotations via UniProt best hits ####
 ### read in protein best hits to Otau2.0 genome with annotations
-Otau3_prot_hits <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau_OT2_top5_hits.txt")
-dim(Otau3_prot_hits) # 242025 rows
+Otau3_prot_hits <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/Genomes/Otau3/Otau_OT2_top5_hits.txt")
+dim(Otau3_prot_hits)
 head(Otau3_prot_hits)
 Otau3_prot_hits_best <- Otau3_prot_hits %>% 
   group_by(Otau_ID) %>% 
@@ -1419,14 +1465,14 @@ Otau3_prot_hits_best <- Otau3_prot_hits %>%
   dplyr::slice(which.max(OT2_pident))
 head(Otau3_prot_hits_best)
 
-Dgaz1_prot_hits <- read.delim("/Users/ericanadolski/Documents/Genomes/Dgaz1/Dgaz_OT2_top5_hits.txt")
+Dgaz1_prot_hits <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/Genomes/Dgaz1/Dgaz_OT2_top5_hits.txt")
 Dgaz1_prot_hits_best <- Dgaz1_prot_hits %>% 
   group_by(Dgaz_ID) %>% 
   top_n(-1,OT2_evalue) %>% 
   dplyr::slice(which.max(OT2_pident))
 
 
-Osag1_prot_hits <- read.delim("/Users/ericanadolski/Documents/Genomes/Osag1/Osag_OT2_top5_hits.txt")
+Osag1_prot_hits <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/Genomes/Osag1/Osag_OT2_top5_hits.txt")
 Osag1_prot_hits_best <- Osag1_prot_hits %>% 
   group_by(Osag_ID) %>% 
   top_n(-1,OT2_evalue) %>% 
@@ -1435,6 +1481,17 @@ Osag1_prot_hits_best <- Osag1_prot_hits %>%
 dim(Otau3_prot_hits_best) # 17332 rows
 dim(Dgaz1_prot_hits_best) # 19672 rows
 dim(Osag1_prot_hits_best) # 16935 rows
+
+### read in Otau2.0 protein names
+Otau2_prot_names <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/Genomes/Otau3/Otau2_prot_names.txt")
+Otau3_prot_anno <- left_join(Otau3_prot_hits_best, Otau2_prot_names)
+colnames(Otau3_prot_anno)<- c("gene", "OT2_ID", "pident", "eval", "OT2_description")
+
+Dgaz1_prot_anno <- left_join(Dgaz1_prot_hits_best, Otau2_prot_names)
+colnames(Dgaz1_prot_anno)<- c("gene", "OT2_ID", "pident", "eval", "OT2_description")
+
+Osag1_prot_anno <- left_join(Osag1_prot_hits_best, Otau2_prot_names)
+colnames(Osag1_prot_anno)<- c("gene", "OT2_ID", "pident", "eval", "OT2_description")
 
 ### read in UniProt annotations ####
 # go terms dataframe has Protein.names annotation
@@ -1472,13 +1529,25 @@ orthogroup_IDs <- orthogroup_counts %>%
   left_join(orthogroup_IDs_full, by = "Orthogroup") %>%
   dplyr::select(Orthogroup, Dgaz.y, Osag.y, Otau.y) %>%
   mutate_all(list(~na_if(.,"")))
-nrow(orthogroup_IDs)
 
 # clean in BBEdit
 write.table(orthogroup_IDs, 
             file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogroup_IDs.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
-orthogroup_IDs_final <- read.delim("/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogroup_IDs_final.txt")
+orthogroup_IDs_final <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/orthogroups/orthogroup_IDs_final.txt")
+head(orthogroup_IDs_final)
+nrow(orthogroup_IDs_final)
+
+## add rows for orphan genes
+orphan_genes <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/orthogroups/orphan_genes_final.txt")
+orphan_genes <- orphan_genes %>% mutate_all(~na_if(., ''))
+head(orphan_genes)
+
+
+nrow(orphan_genes) # 9206
+nrow(orthogroup_IDs_final) # 10342
+orthogroup_IDs_final <- rbind(orthogroup_IDs_final, orphan_genes)
+nrow(orthogroup_IDs_final) # 19548
 
 # prep DGE columns 
 Ot_PH_MvF_gene <- dplyr::rename(Ot_PH_MvF_gene, OtPH_upreg = upreg)
@@ -1493,147 +1562,445 @@ Dg_PH_MvF_gene <- dplyr::rename(Dg_PH_MvF_gene, DgPH_upreg = upreg)
 Dg_AH_MvF_gene <- dplyr::rename(Dg_AH_MvF_gene, DgAH_upreg = upreg)
 Dg_G_MvF_gene <- dplyr::rename(Dg_G_MvF_gene, DgG_upreg = upreg)
 
+# create dataframes - will have rows for all 10342 SCOs plus additional rows for genes in each genome that were tested for DGE but not in a SCO
 
 orthogrp_sex_res_PH <- orthogroup_IDs_final %>%
   full_join(Ot_PH_MvF_gene, by = c("Otau" = "gene")) %>%
   full_join(Os_PH_MvF_gene, by = c("Osag" = "gene")) %>%
   full_join(Dg_PH_MvF_gene, by = c("Dgaz" = "gene")) %>%
-  dplyr::select(Orthogroup,Otau,Dgaz,Osag,OtPH_upreg,OsPH_upreg,DgPH_upreg)
-
-colSums(is.na(orthogrp_sex_res_PH))
+  dplyr::select(Orthogroup,Dgaz,Otau,Osag,DgPH_upreg,OtPH_upreg,OsPH_upreg)
 
 orthogrp_sex_res_AH <- orthogroup_IDs_final %>%
   full_join(Ot_AH_MvF_gene, by = c("Otau" = "gene")) %>%
   full_join(Os_AH_MvF_gene, by = c("Osag" = "gene")) %>%
   full_join(Dg_AH_MvF_gene, by = c("Dgaz" = "gene")) %>%
-  dplyr::select(Orthogroup,Otau,Dgaz,Osag,OtAH_upreg,OsAH_upreg,DgAH_upreg)
+  dplyr::select(Orthogroup,Dgaz,Otau,Osag,DgAH_upreg,OtAH_upreg,OsAH_upreg)
 
 orthogrp_sex_res_G <- orthogroup_IDs_final %>%
   full_join(Ot_G_MvF_gene, by = c("Otau" = "gene")) %>%
   full_join(Os_G_MvF_gene, by = c("Osag" = "gene")) %>%
   full_join(Dg_G_MvF_gene, by = c("Dgaz" = "gene")) %>%
-  dplyr::select(Orthogroup,Otau,Dgaz,Osag,OtG_upreg,OsG_upreg,DgG_upreg)
+  dplyr::select(Orthogroup,Dgaz,Otau,Osag,DgG_upreg,OtG_upreg,OsG_upreg)
+
+## now drop rows where all three species upreg column is NA
+## PH 
+colSums(is.na(orthogrp_sex_res_PH))
+nrow(orthogrp_sex_res_PH)
+orthogrp_sex_res_PH_filtered <- orthogrp_sex_res_PH %>%
+  filter(!if_all(c(OtPH_upreg, OsPH_upreg, DgPH_upreg), ~ . %in% c(NA, "ns")))
+
+orthogrp_sex_res_PH_filtered <- orthogrp_sex_res_PH_filtered %>% mutate_all(~na_if(., ''))
+colSums(is.na(orthogrp_sex_res_PH_filtered)) 
+nrow(orthogrp_sex_res_PH_filtered) # 1979 rows total - should be 2032
+
+## AH
+colSums(is.na(orthogrp_sex_res_AH))
+
+orthogrp_sex_res_AH_filtered <- orthogrp_sex_res_AH %>%
+  filter(!if_all(c(OtAH_upreg, OsAH_upreg, DgAH_upreg), ~ . %in% c(NA, "ns")))
+
+orthogrp_sex_res_AH_filtered <- orthogrp_sex_res_AH_filtered %>% mutate_all(~na_if(., ''))
+colSums(is.na(orthogrp_sex_res_AH_filtered)) 
+nrow(orthogrp_sex_res_AH_filtered) # 1945 rows total
+
+## G
+colSums(is.na(orthogrp_sex_res_G))
+
+orthogrp_sex_res_G_filtered <- orthogrp_sex_res_G %>%
+  filter(!if_all(c(OtG_upreg, OsG_upreg, DgG_upreg), ~ . %in% c(NA, "ns")))
+
+orthogrp_sex_res_G_filtered <- orthogrp_sex_res_G_filtered %>% mutate_all(~na_if(., ''))
+colSums(is.na(orthogrp_sex_res_G_filtered)) 
+nrow(orthogrp_sex_res_G_filtered) # 3484 rows total
+
+## export data tables
+write.table(orthogrp_sex_res_PH_filtered, 
+            file = "/Users/ericanadolski/Desktop/orthogrp_sex_res_PH_filtered_strict.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+
+write.table(orthogrp_sex_res_AH_filtered, 
+            file = "/Users/ericanadolski/Desktop/orthogrp_sex_res_AH_filtered_strict.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+
+write.table(orthogrp_sex_res_G_filtered, 
+            file = "/Users/ericanadolski/Desktop/orthogrp_sex_res_G_filtered_strict.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+
+###### Step 7: Statistics, binomial proportions tests ####
+# pleiotropic genes ####
+# genes shared across traits Otau vs Dgaz males
+prop.test(x = c(280, 29), n = c(1867, 691)) # X-squared = 54.382, df = 1, p-value = 1.651e-13
+
+# genes shared across traits Otau vs Dgaz females
+prop.test(x = c(254, 23), n = c(2661, 708)) # X-squared = 28.554, df = 1, p-value = 9.113e-08
+
+# genes shared across traits Osag vs Dgaz males
+prop.test(x = c(80, 29), n = c(910, 691)) # X-squared = 12.353, df = 1, p-value = 0.0004403
+
+# genes shared across traits Osag vs Dgaz females
+prop.test(x = c(61, 23), n = c(1076, 708)) # X-squared = 5.0498, df = 1, p-value = 0.02463
+
+# DEGs conserved across species ####
+# conserved DEGs posterior head vs genitalia males
+prop.test(x = c(133, 17), n = c(1447, 1048)) # X-squared = 60.296, df = 1, p-value = 8.163e-15
+
+# conserved DEGs posterior head vs genitalia females
+prop.test(x = c(194, 25), n = c(2417, 1035)) # X-squared = 37.461, df = 1, p-value = 9.328e-10
+
+# conserved DEGs anterior head vs genitalia males
+prop.test(x = c(133, 10), n = c(1447, 973)) # X-squared = 68.277, df = 1, p-value < 2.2e-16
+
+# conserved DEGs posterior head vs genitalia females
+prop.test(x = c(194, 5), n = c(2417, 993))
+
+#### chi squared approximations may not be accurate due to small sample sizes 
+# orphan genes - trait proportions #####
+# orphan genes female Otau PH vs G
+prop.test(x = c(21, 44), n = c(938, 777)) # X-squared = 12.741, df = 1, p-value = 0.0003578
+
+# orphan genes female Otau AH vs G
+prop.test(x = c(21, 21), n = c(938, 946)) # X-squared = 4.1976e-31, df = 1, p-value = 1
+
+# orphan genes female Osag PH vs G
+prop.test(x = c(22, 8), n = c(859, 181)) # X-squared = 1.24, df = 1, p-value = 0.2655
+
+# orphan genes male Osag PH vs G
+prop.test(x = c(17, 32), n = c(431, 300)) # X-squared = 11.729, df = 1, p-value = 0.0006153
+
+# orphan genes male Osag AH vs G
+prop.test(x = c(17, 9), n = c(431, 179)) # X-squared = 0.14683, df = 1, p-value = 0.7016- trait pro
 
 
-write.table(orthogrp_sex_res_PH, 
-            file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogrp_sex_res_PH.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-
-write.table(orthogrp_sex_res_AH, 
-            file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogrp_sex_res_AH.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-
-write.table(orthogrp_sex_res_G, 
-            file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/orthogrp_sex_res_G.txt", sep = "\t", quote = FALSE, row.names = FALSE)
-
-### parsing out the gene set totals #####
-### POSTERIOR HEAD ####
-### lineage-specific ####
-nrow(orthogrp_sex_res_PH %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgPH_upreg=="F")) 
-# lineage-specific Dgaz F PH upreg genes = 23
-
-nrow(orthogrp_sex_res_PH %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgPH_upreg=="M")) 
-# lineage-specific Dgaz M PH upreg genes = 34
-
-nrow(orthogrp_sex_res_PH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsPH_upreg=="F")) 
-# lineage-specific Osag F PH upreg genes = 43
-
-nrow(orthogrp_sex_res_PH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsPH_upreg=="M")) 
-# lineage-specific Osag M PH upreg genes = 103
-
-nrow(orthogrp_sex_res_PH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtPH_upreg=="F")) 
-# lineage-specific Otau F PH upreg genes = 233
-
-nrow(orthogrp_sex_res_PH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtPH_upreg=="M")) 
-# lineage-specific Otau M PH upreg genes = 205
-
-### shared ####
-nrow(orthogrp_sex_res_PH %>% filter(OtPH_upreg=="F") %>% filter(DgPH_upreg=="F")  %>% filter(OsPH_upreg=="F"))
-# all 3 shared F PH upreg genes = 3
-
-nrow(full_sex_res_PH %>% filter(OtPH_upreg=="F") %>% filter(OsPH_upreg=="F")) 
-# Otau + Osag shared F PH upreg genes = 14
-
-nrow(full_sex_res_PH %>% filter(DgPH_upreg=="F") %>% filter(OsPH_upreg=="F")) 
-# Dgaz + Osag shared F PH upreg genes = 6
-
-nrow(full_sex_res_PH %>% filter(OtPH_upreg=="F") %>% filter(DgPH_upreg=="F")) 
-# Dgaz + Otau shared F PH upreg genes = 11
-
-### posterior horn-promoting gene sets ###
-nrow(full_sex_res_PH %>% filter(OtPH_upreg=="M") %>% filter(DgPH_upreg=="M")  %>% filter(OsPH_upreg=="F")) # 1
-
-### GENITALIA ####
-### lineage-specific ####
-nrow(full_sex_res_G %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgG_upreg=="F")) 
-# lineage-specific Dgaz F G upreg genes = 178
-
-nrow(full_sex_res_G %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgG_upreg=="M")) 
-# lineage-specific Dgaz M G upreg genes = 138
-
-nrow(full_sex_res_G %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsG_upreg=="F")) 
-# lineage-specific Osag F G upreg genes = 353
-
-nrow(full_sex_res_G %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsG_upreg=="M")) 
-# lineage-specific Osag M G upreg genes = 110
-
-nrow(full_sex_res_G %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtG_upreg=="F")) 
-# lineage-specific Otau F G upreg genes = 277
-
-nrow(full_sex_res_G %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtG_upreg=="M")) 
-# lineage-specific Otau M G upreg genes = 103
-
-### shared ####
+#### plotting bar charts #####
+#### within species, shared gene expression across traits #####
 # female
-nrow(full_sex_res_G %>% filter(OtG_upreg=="F") %>% filter(DgG_upreg=="F")  %>% filter(OsG_upreg=="F")) # 15
+species <- c(rep("Dg" , 2) , rep("Ot" , 2) , rep("Os" , 2))
+type <- rep(c("S" , "TS") , 3)
+tally <- c(23,685,254,2407,61,1015)
+shared_genes_F <- data.frame(species,type,tally)
+shared_genes_F$species <- factor(shared_genes_F$species, levels = c("Dg", "Ot", "Os"))
 
-nrow(full_sex_res_G %>% filter(OtG_upreg=="F") %>% filter(OsG_upreg=="F")) # 70
-
-nrow(full_sex_res_G %>% filter(DgG_upreg=="F") %>% filter(OsG_upreg=="F")) # 68
-
-nrow(full_sex_res_G %>% filter(OtG_upreg=="F") %>% filter(DgG_upreg=="F")) # 85
+ggplot(shared_genes_F, aes(fill=type, y=tally, x=species)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("S"="grey50", "TS"="black")) + 
+  labs(title= "female-biased genes", x = "species", y = "% of sex-biased genes") + 
+  theme_classic()
 
 # male
-nrow(full_sex_res_G %>% filter(OtG_upreg=="M") %>% filter(DgG_upreg=="M")  %>% filter(OsG_upreg=="M"))# all 3 shared = 18
+species <- c(rep("Dg" , 2) , rep("Ot" , 2) , rep("Os" , 2))
+type <- rep(c("S" , "TS") , 3)
+tally <- c(29,662,280,1857,80,830)
+shared_genes_M <- data.frame(species,type,tally)
+shared_genes_M$species <- factor(shared_genes_M$species, levels = c("Dg", "Ot", "Os"))
 
-nrow(full_sex_res_G %>% filter(OtG_upreg=="M") %>% filter(OsG_upreg=="M")) # 55
+ggplot(shared_genes_M, aes(fill=type, y=tally, x=species)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("S"="grey50", "TS"="black")) + 
+  labs(title= "male-biased genes", x = "species", y = "% of sex-biased genes") + 
+  theme_classic()
 
-nrow(full_sex_res_G %>% filter(DgG_upreg=="M") %>% filter(OsG_upreg=="M")) # 48
+#### within traits, shared gene expression across species #####
+### male biased
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("shared" , "species-specific") , 3)
+tally <- c(8,100,1.6,100,1,100)
+shared_genes_trait_M <- data.frame(trait,type,tally)
+shared_genes_trait_M$trait <- factor(shared_genes_trait_M$trait, levels = c("G", "PH", "AH"))
+shared_genes_trait_M$type <- factor(shared_genes_trait_M$type, levels = c("species-specific", "shared"))
 
-nrow(full_sex_res_G %>% filter(OtG_upreg=="M") %>% filter(DgG_upreg=="M")) # 66
+ggplot(shared_genes_trait_M, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("species-specific"="grey50", "shared"="black")) + 
+  labs(title= "male-biased genes shared across traits", x = "trait", y = "% of sex-biased genes") + 
+  theme_classic()
+# in the genitalia, 8.0% of male-biased genes and 9.2% of female-biased genes showed conserved sex-responsiveness across species; in contrast, in the posterior head only 1.6% of male-biased genes (X2 = 60.296, df = 1, p < 0.001) and 2.4% of female-biased genes (X2= 37.461, df = 1, p < 0.001) maintained sex-responsive expression across species, whereas in the anterior head, only 1.0% of male-biased genes (X2 = 68.277, df = 1, p < 0.001) and 0.5% of female-biased genes (X2 = 71.125, df = 1, p < 0.001) showed this pattern
 
-### ANTERIOR HEAD ####
-### lineage-specific ####
-nrow(full_sex_res_AH %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgAH_upreg=="F")) 
-# lineage-specific Dgaz F AH upreg genes = 34
+### female biased
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("shared" , "species-specific") , 3)
+tally <- c(9.2,100,2.4,100,0.5,100)
+shared_genes_trait_F <- data.frame(trait,type,tally)
+shared_genes_trait_F$trait <- factor(shared_genes_trait_F$trait, levels = c("G", "PH", "AH"))
+shared_genes_trait_F$type <- factor(shared_genes_trait_F$type, levels = c("species-specific", "shared"))
 
-nrow(full_sex_res_AH %>% filter(is.na(Orthogroup)) %>% filter(is.na(Osag)) %>% filter(is.na(Otau)) %>% filter(DgAH_upreg=="M")) 
-# lineage-specific Dgaz M AH upreg genes = 23
+ggplot(shared_genes_trait_F, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("species-specific"="grey50", "shared"="black")) + 
+  labs(title= "female-biased genes shared across traits", x = "trait", y = "% of sex-biased genes") + 
+  theme_classic()
 
-nrow(full_sex_res_AH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsAH_upreg=="F")) 
-# lineage-specific Osag F AH upreg genes = 103
 
-nrow(full_sex_res_AH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Otau)) %>% filter(OsAH_upreg=="M")) 
-# lineage-specific Osag M AH upreg genes = 43
+########## Step 8: evidence of positive selection on coding sequence #####
+## read in results from HyPhy ####
+# Otau ####
+Ot_coding_sel <- read.table("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/coding_selection/busted_otau_results.txt", sep = "\t", fill = TRUE, header=TRUE)
 
-nrow(full_sex_res_AH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtAH_upreg=="F")) 
-# lineage-specific Otau F AH upreg genes = 234
+Ot_OGs <- read.table("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/coding_selection/OG_w_Ot_IDs.txt", sep = "\t", fill = TRUE, header=TRUE)
 
-nrow(full_sex_res_AH %>%  filter(is.na(Orthogroup)) %>% filter(is.na(Dgaz)) %>% filter(is.na(Osag)) %>% filter(OtAH_upreg=="M")) 
-# lineage-specific Otau M AH upreg genes = 205
+Ot_coding_sel <- left_join(Ot_coding_sel,Ot_OGs, by="OG")
 
-### shared ####
-nrow(full_sex_res_AH %>% filter(OtAH_upreg=="F") %>% filter(DgAH_upreg=="F")  %>% filter(OsAH_upreg=="F"))
-# all 3 shared F AH upreg genes = 0
+Ot_coding_sel_DEG <- Ot_coding_sel %>% 
+  left_join(Ot_AH_MvF_gene, by="gene") %>%
+  left_join(Ot_PH_MvF_gene, by="gene") %>%
+  left_join(Ot_G_MvF_gene, by="gene") %>%
+  select(OG,pval,gene,OtG_upreg,OtPH_upreg,OtAH_upreg)
 
-nrow(full_sex_res_AH %>% filter(OtAH_upreg=="F") %>% filter(OsAH_upreg=="F")) 
-# Otau + Osag shared F AH upreg genes = 10
+# identify columns containing "upreg"
+upreg_cols <- grep("upreg", names(Ot_coding_sel_DEG), value = TRUE)
 
-nrow(full_sex_res_AH %>% filter(DgAH_upreg=="F") %>% filter(OsAH_upreg=="F")) 
-# Dgaz + Osag shared F AH upreg genes = 0
+plot_df_Ot <- Ot_coding_sel_DEG %>%
+  pivot_longer(cols = all_of(upreg_cols), names_to = "comparison", values_to = "upreg_status") %>%
+  filter(!is.na(upreg_status), upreg_status != "ns") %>%# keep only upregulated genes
+  mutate(selection_status = case_when(
+    !is.na(pval) & pval < 0.1 ~ "p < 0.1",
+    !is.na(pval) & pval >= 0.1 ~ "p >= 0.1",
+    TRUE ~ NA_character_)) %>%
+  filter(!is.na(selection_status)) %>%
+  count(comparison, selection_status)
 
-nrow(full_sex_res_AH %>% filter(OtAH_upreg=="F") %>% filter(DgAH_upreg=="F")) 
-# Dgaz + Otau shared F AH upreg genes = 0
+plot_df_Ot$comparison <- factor(plot_df_Ot$comparison, levels= c("OtG_upreg","OtPH_upreg","OtAH_upreg"))
 
-###### Step 7: export sex-responsive genes ####
+
+# plot side by side bars
+ggplot(plot_df_Ot, aes(x = comparison, y = n, fill = selection_status)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("black","grey")) +
+  labs(x = NULL, y = "Number of upregulated genes", fill = "Selection status") +
+  theme_bw()
+
+
+## to include a bar for upreg genes not tested
+plot_df_Ot <- Ot_coding_sel_DEG %>%
+  pivot_longer(
+    cols = all_of(upreg_cols),
+    names_to = "comparison",
+    values_to = "upreg_status"
+  ) %>%
+  filter(!is.na(upreg_status),
+         upreg_status != "ns") %>%
+  mutate(
+    selection_status = case_when(
+      is.na(pval) ~ "Not tested",
+      pval < 0.1 ~ "p < 0.1",
+      pval >= 0.1 ~ "p >= 0.1"
+    )
+  ) %>%
+  count(comparison, selection_status)
+
+plot_df_Ot$comparison <- factor(plot_df_Ot$comparison, levels= c("OtG_upreg","OtPH_upreg","OtAH_upreg"))
+plot_df_Ot$selection_status <- factor(plot_df_Ot$selection_status, levels= c("p < 0.1","p >= 0.1","Not tested"))
+
+# plot side by side bars
+ggplot(plot_df_Ot, aes(x = comparison, y = n, fill = selection_status)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("black","grey50","grey")) +
+  labs(x = NULL, y = "Number of upregulated genes", fill = "Selection status") +
+  theme_bw()
+
+# plot stacked bars 
+ggplot(plot_df_Ot, aes(x = comparison, y = n, fill = selection_status)) +
+  geom_col() +
+  ylim(0,1300) + 
+  scale_fill_manual(values = c("black","grey50","grey")) +
+  labs(x = NULL, y = "Number of upregulated genes", fill = "Selection status") +
+  theme_classic()
+
+# plot proportions stacked bars
+ggplot(plot_df_Ot, aes(x = comparison, y = n, fill = selection_status)) +
+  geom_col(position = "fill") +
+  scale_fill_manual(values = c("black", "grey50","grey")) +
+  labs(x = NULL, y = "Proportion of upregulated genes",fill = "Selection status") +
+  theme_classic()
+
+#Osag ####
+Os_coding_sel <- read.table("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/coding_selection/busted_osag_results.txt", sep = "\t", fill = TRUE, header=TRUE)
+
+Os_OGs <- read.table("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/coding_selection/OG_w_Os_IDs.txt", sep = "\t", fill = TRUE, header=TRUE)
+
+Os_coding_sel <- left_join(Os_coding_sel,Os_OGs, by="OG")
+
+Os_coding_sel_DEG <- Os_coding_sel %>% 
+  left_join(Os_AH_MvF_gene, by="gene") %>%
+  left_join(Os_PH_MvF_gene, by="gene") %>%
+  left_join(Os_G_MvF_gene, by="gene") %>%
+  select(OG,pval,gene,OsG_upreg,OsPH_upreg,OsAH_upreg)
+
+# identify columns containing "upreg"
+upreg_cols <- grep("upreg", names(Os_coding_sel_DEG), value = TRUE)
+
+plot_df <- Os_coding_sel_DEG %>%
+  pivot_longer(cols = all_of(upreg_cols), names_to = "comparison", values_to = "upreg_status") %>%
+  filter(!is.na(upreg_status), upreg_status != "ns") %>%# keep only upregulated genes
+  mutate(selection_status = case_when(
+    !is.na(pval) & pval < 0.1 ~ "p < 0.1",
+    !is.na(pval) & pval >= 0.1 ~ "p >= 0.1",
+    TRUE ~ NA_character_)) %>%
+  filter(!is.na(selection_status)) %>%
+  count(comparison, selection_status)
+
+plot_df$comparison <- factor(plot_df$comparison, levels= c("OsG_upreg","OsPH_upreg","OsAH_upreg"))
+
+# plot side by side bars
+ggplot(plot_df, aes(x = comparison, y = n, fill = selection_status)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("black","grey")) +
+  ylim(0, 1000) +
+  labs(x = NULL, y = "Number of upregulated genes", fill = "Selection status") +
+  theme_bw()
+
+## to include a bar for upreg genes not tested
+plot_df <- Os_coding_sel_DEG %>%
+  pivot_longer(
+    cols = all_of(upreg_cols),
+    names_to = "comparison",
+    values_to = "upreg_status"
+  ) %>%
+  filter(!is.na(upreg_status),
+         upreg_status != "ns") %>%
+  mutate(
+    selection_status = case_when(
+      is.na(pval) ~ "Not tested",
+      pval < 0.1 ~ "p < 0.1",
+      pval >= 0.1 ~ "p >= 0.1"
+    )
+  ) %>%
+  count(comparison, selection_status)
+
+plot_df$comparison <- factor(plot_df$comparison, levels= c("OsG_upreg","OsPH_upreg","OsAH_upreg"))
+plot_df$selection_status <- factor(plot_df$selection_status, levels= c("p < 0.1","p >= 0.1","Not tested"))
+
+# plot side by side bars
+ggplot(plot_df, aes(x = comparison, y = n, fill = selection_status)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("black","grey50","grey")) +
+  ylim(0, 1000) +
+  labs(x = NULL, y = "Number of upregulated genes", fill = "Selection status") +
+  theme_bw()
+
+# plot stacked bars 
+ggplot(plot_df, aes(x = comparison, y = n, fill = selection_status)) +
+  geom_col(position = "fill") +
+  scale_fill_manual(values = c("black", "grey50","grey")) +
+  labs(x = NULL, y = "Proportion of upregulated genes",fill = "Selection status") +
+  theme_classic()
+
+
+### binomial proportions tests genes with evidence of positive selection #####
+### Otau ####
+#comparison selection_status     n
+#1 OtAH_upreg p < 0.1             32
+#2 OtAH_upreg p >= 0.1           991
+#3 OtG_upreg  p < 0.1             21
+#4 OtG_upreg  p >= 0.1           747
+#5 OtPH_upreg p < 0.1             36
+#6 OtPH_upreg p >= 0.1           717
+
+
+# Otau genes w positive sel, PH vs G
+prop.test(x = c(36, 21), n = c(36+717, 21+747)) # X-squared = 3.8655, df = 1, p-value = 0.04929
+
+# Otau genes w positive sel, AH vs G
+prop.test(x = c(32, 21), n = c(32+991, 21+747)) # X-squared = 0.11951, df = 1, p-value = 0.7296
+
+# Otau genes w positive sel, DE in 1 trait vs 2 
+prop.test(x = c(58, 25), n = c(1788, 628)) # p-value = 0.4562
+
+
+### Osag ####
+# comparison selection_status     n
+#2 OsAH_upreg p < 0.1              2
+#3 OsAH_upreg p >= 0.1            99
+#5 OsG_upreg  p < 0.1             26
+#6 OsG_upreg  p >= 0.1           578
+#8 OsPH_upreg p < 0.1             14
+#9 OsPH_upreg p >= 0.1           249
+
+# Os genes w positive sel, PH vs G
+prop.test(x = c(14, 26), n = c(14+249, 26+578)) # X-squared = 0.23149, df = 1, p-value = 0.6304
+
+# Os genes w positive sel, AH vs G
+prop.test(x = c(2, 26), n = c(2+99, 26+578)) # X-squared = 0.69214, df = 1, p-value = 0.4054
+
+
+### binomial proportions tests stats on conserved vs. lineage specific genes #####
+### Osag ####
+# lineage specific genes Osag AH vs Osag G male
+prop.test(x = c(9, 17), n = c(179, 431)) # X-squared = 0.14683, df = 1, p-value = 0.7016
+
+# lineage specific genes Osag PH vs Osag G male
+prop.test(x = c(32, 17), n = c(300, 431)) # X-squared = 11.729, df = 1, p-value = 0.0006153
+
+# lineage specific genes Osag AH vs Osag G female
+prop.test(x = c(0, 22), n = c(36, 859)) # X-squared = 0.17884, df = 1, p-value = 0.6724
+
+# lineage specific genes Osag PH vs Osag G female
+prop.test(x = c(8, 22), n = c(181, 859)) # X-squared = 1.24, df = 1, p-value = 0.2655
+
+### Otau ####
+# lineage specific genes Ot AH vs Ot G male
+prop.test(x = c(10, 6), n = c(771,448)) # X-squared = 1.6579e-30, df = 1, p-value = 1
+
+# lineage specific genes Ot PH vs Ot G male
+prop.test(x = c(8, 6), n = c(648, 448)) # X-squared = 1.4249e-32, df = 1, p-value = 1
+
+# lineage specific genes Ot AH vs Ot G female
+prop.test(x = c(21, 21), n = c(946, 938)) # X-squared = 4.1976e-31, df = 1, p-value = 1
+
+# lineage specific genes Ot PH vs Ot G female
+prop.test(x = c(44, 21), n = c(777, 938)) # X-squared = 12.741, df = 1, p-value = 0.0003578
+
+
+### plotting conserved vs. lineage specific genes #####
+# O tau male
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("C" , "LS") , 3)
+tally <- c(448-6,6,648-8,8,771-10,10)
+Ot_M_LS_genes <- data.frame(trait,type,tally)
+Ot_M_LS_genes$trait <- factor(Ot_M_LS_genes$trait , levels = c("G", "PH", "AH"))
+
+ggplot(Ot_M_LS_genes, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("C"="grey50", "LS"="black")) + 
+  labs(title= "O. taurus male-biased genes", x = "trait", y = "% of sex-biased genes") + 
+  theme_classic()
+
+# O tau female
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("C" , "LS") , 3)
+tally <- c(938-21,21,777-44,44,946-21,21,)
+Ot_F_LS_genes <- data.frame(trait,type,tally)
+Ot_F_LS_genes$trait <- factor(Ot_F_LS_genes$trait , levels = c("G", "PH", "AH"))
+
+ggplot(Ot_F_LS_genes, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("C"="grey50", "LS"="black")) + 
+  labs(title= "O. taurus female-biased genes", x = "trait", y = "% of sex-biased genes") + 
+  theme_classic()
+
+# Os male
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("C" , "LS") , 3)
+tally <- c(431-17,17,300-32,32,179-9,9)
+Os_M_LS_genes <- data.frame(trait,type,tally)
+Os_M_LS_genes$trait <- factor(Os_M_LS_genes$trait , levels = c("G", "PH", "AH"))
+
+ggplot(Os_M_LS_genes, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("C"="grey50", "LS"="black")) + 
+  labs(title= "O. sag male-biased genes", x = "trait", y = "% of sex-biased genes") + 
+  theme_classic()
+
+# Os female
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("C" , "LS") , 3)
+tally <- c(859-22,22,181-8,8,36,0)
+Os_F_LS_genes <- data.frame(trait,type,tally)
+Os_F_LS_genes$trait <- factor(Os_F_LS_genes$trait , levels = c("G", "PH", "AH"))
+
+ggplot(Os_F_LS_genes, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("C"="grey50", "LS"="black")) + 
+  labs(title= "O. sag female-biased genes", x = "trait", y = "% of sex-biased genes") + 
+  theme_classic()
+
+###### Step 9: export sex-responsive genes ####
 ### Otau ####
 write.table(deg_Ot_PH_MvF_anno, 
             file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/Ot_PH_MvF_deg.txt", sep = "\t", quote = FALSE, row.names = FALSE)
@@ -1788,80 +2155,59 @@ write.table(deg_Os_G_F_up,
             file = "./GitHub/Beetle-sexual-dimorphism/Os_G_F_up.txt",
             sep = "\t", quote = FALSE, row.names = FALSE)
 
-###### Step 9: Plotting doublesex expression levels #####
-#### used updated GTF/fasta salmon pseudomapping run
-### O taurus ####
-##### use the 'cpm' function from EdgeR to get counts per million
-# make the DGEList
-Ot_eds_r <- DGEList(Ot_counts)
-# calculate TMM normalization factors
-Ot_eds_r <- calcNormFactors(Ot_eds_r)
-#get the normalized counts
-Ot_cpm <- cpm(Ot_eds_r, log=FALSE) # matrix output
-
-# make new df 
-Ot_dsx <- as.data.frame(t(Ot_cpm[c("jg10020.t1", "jg10020.t2", "jg10020.t3", "jg10020.t4", "jg10020.t5", "jg10020.t6", "jg10020.t7"),]))
-Ot_dsx$Sex_Trait <- Ot_sample_table$Sex_Trait
-Ot_dsx <- rename(Ot_dsx, "F1"="jg10020.t1", "F2"="jg10020.t2", "F3"="jg10020.t3", "F4"="jg10020.t4", "F5"="jg10020.t5", "M"="jg10020.t6", "B"="jg10020.t7")
-
-ggplot(Ot_dsx, aes(x=Sex_Trait, y=jg10020.t1)) +
-  geom_boxplot() +
-  scale_x_discrete(limits=c("F_AH","M_AH","F_PH","M_PH","F_L","M_L","F_G","M_G","F_E","M_E")) +
-  labs(title="O.tau dsxF1 read counts",x="Sample Type", y = "CPM") + theme_classic()
-
-Ot_dsx_long <- Ot_dsx %>% rownames_to_column("sample") %>% pivot_longer(cols=c("F1", "F2", "F3", "F4", "F5", "M", "B"),
-                    names_to='isoform',
-                    values_to='counts')
-
-Ot_plot <- ggplot(Ot_dsx_long) +
-  geom_boxplot(aes(x=Sex_Trait, y=counts, color=isoform)) +
-  scale_x_discrete(limits=c("F_AH","M_AH","F_PH","M_PH","F_L","M_L","F_G","M_G","F_E","M_E")) +
-  labs(title="O.tau dsx isoform expression across sample types",x="Sample Type", y = "CPM") + theme_classic() + scale_color_manual(values=c("#999999", "#F564E3","#F8766D", "#B79F00", "#00BA38","#00BFC4","#619CFF"))
-
-### O sagittarius ####
-# make the DGEList
-Os_eds_r <- DGEList(Os_counts)
-# calculate TMM normalization factors
-Os_eds_r <- calcNormFactors(Os_eds_r)
-#get the normalized counts
-Os_cpm <- cpm(Os_eds_r, log=FALSE) # matrix output
-Os_dsx <- as.data.frame(t(Os_counts[c("jg15025.t1", "jg15025.t2", "jg15025.t3", "jg15025.t4", "jg15025.t5", "jg15025.t6"),]))
-Os_dsx$Sex_Trait <- Os_sample_table$Sex_Trait
-Os_dsx <- rename(Os_dsx, "F1"="jg15025.t1", "F2"="jg15025.t2", "F3"="jg15025.t3", "F4"="jg15025.t4", "F5"="jg15025.t5", "M"="jg15025.t6")
-
-Os_dsx_long <- Os_dsx %>% rownames_to_column("sample") %>% pivot_longer(cols=c("F1", "F2", "F3", "F4", "F5", "M"), names_to='isoform', values_to='counts')
-Os_plot <- ggplot(Os_dsx_long) +
-  geom_boxplot(aes(x=Sex_Trait, y=counts, color=isoform)) +
-  scale_x_discrete(limits=c("F_AH","M_AH","F_PH","M_PH","F_L","M_L","F_G","M_G","F_E","M_E")) +
-  labs(title="Osag dsx isoform expression",x="Sample Type", y = "CPM") + theme_classic() +
-  scale_color_manual(values=c("#F564E3","#F8766D", "#B79F00", "#00BA38","#00BFC4","#619CFF"))
-
-ggplot_build(Os_plot)$dat
-
-### D gazella #####
-##### use the 'cpm' function from EdgeR to get counts per million
-# make the DGEList
-Dg_eds_r <- DGEList(Dg_counts)
-# calculate TMM normalization factors
-Dg_eds_r <- calcNormFactors(Dg_eds_r)
-#get the normalized counts
-Dg_cpm <- as.data.frame(cpm(Dg_eds_r, log=FALSE)) # matrix output
-
-# make new df 
-Dg_dsx <- as.data.frame(t(Dg_cpm[c("jg19569.t1", "jg19569.t2"),]))
-Dg_dsx$Sex_Trait <- Dg_sample_table$Sex_Trait
-Dg_dsx <- rename(Dg_dsx, "dsxF"="jg19569.t1", "dsxM"="jg19569.t2")
-
-Dg_dsx_long <- Dg_dsx %>% rownames_to_column("sample") %>% pivot_longer(cols=c("dsxF", "dsxM"),
-                                                                        names_to='isoform',
-                                                                        values_to='counts')
-
-ggplot(Dg_dsx_long) +
-  geom_boxplot(aes(x=Sex_Trait, y=counts, color=isoform)) +
-  scale_x_discrete(limits=c("F_AH","M_AH","F_PH","M_PH","F_L","M_L","F_G","M_G","F_E","M_E")) +
-  labs(title="Dgaz dsx isoform expression across sample types",x="Sample Type", y = "CPM") + theme_classic() + scale_color_manual(values=c("#F564E3","#619CFF"))
-
 # II. ATACseq data analyses ############################################################################
+###### Step 0: import all_peaks bed files and create midpoint column for halLiftover #####
+# Otau
+Ot_allpeaks <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/all-peaks-bed-files/Ot_allpeaks_final.bed", header=FALSE)
+colnames(Ot_allpeaks) <- c("Scaffold","start","end","peak")
+head(Ot_allpeaks)
+
+# add midpoint column 
+Ot_summits  <- Ot_allpeaks %>%
+  mutate(mid = round((end-start)/2 + start)) %>% select(Scaffold, mid, peak)
+
+colnames(Ot_summits) <- c("Scaffold","start","peak")
+
+Ot_summits  <- Ot_summits %>%
+  mutate(end = start + 1) %>% select(Scaffold, start, end, peak)
+head(Ot_summits)
+
+write.table(Ot_summits, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/all-peaks-bed-files/Ot_summits.bed", sep = "\t", quote = FALSE, row.names = FALSE)
+
+# Osag
+Os_allpeaks <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/all-peaks-bed-files/Os_allpeaks_final.bed", header=FALSE)
+colnames(Os_allpeaks) <- c("Scaffold","start","end","peak")
+head(Os_allpeaks)
+
+# add midpoint column 
+Os_summits  <- Os_allpeaks %>%
+  mutate(mid = round((end-start)/2 + start)) %>% select(Scaffold, mid, peak)
+
+colnames(Os_summits) <- c("Scaffold","start","peak")
+
+Os_summits  <- Os_summits %>%
+  mutate(end = start + 1) %>% select(Scaffold, start, end, peak)
+head(Os_summits)
+
+write.table(Os_summits, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/all-peaks-bed-files/Os_summits.bed", sep = "\t", quote = FALSE, row.names = FALSE)
+
+# Dgaz
+Dg_allpeaks <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/all-peaks-bed-files/Dg_allpeaks_final_renamed.bed", header=FALSE)
+colnames(Dg_allpeaks) <- c("Scaffold","start","end","peak")
+head(Dg_allpeaks)
+
+# add midpoint column 
+Dg_summits  <- Dg_allpeaks %>%
+  mutate(mid = round((end-start)/2 + start)) %>% select(Scaffold, mid, peak)
+
+colnames(Dg_summits) <- c("Scaffold","start","peak")
+
+Dg_summits  <- Dg_summits %>%
+  mutate(end = start + 1) %>% select(Scaffold, start, end, peak)
+head(Dg_summits)
+
+write.table(Dg_summits, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/all-peaks-bed-files/Dg_summits.bed", sep = "\t", quote = FALSE, row.names = FALSE)
+
 ###### Step 1: import ATAC-seq read counts from bedtools multicov #####
 # Otau
 Ot_OCR_counts <- read.delim("/Users/ericanadolski/GitHub/Onthophagus_sexual_dimorphism/Ot_peak_counts.txt", header=TRUE)
@@ -2311,7 +2657,7 @@ PCA_Os_AH_ATAC
 ggsave(PCA_Os_AH_ATAC, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC_Os_AH_PCA.pdf",
        width = 4.30, height = 3.77)
 ###### Step 4: differential chromatin accessibility analysis ####
-### Dgaz #### 
+# Dgaz #### 
 ### posterior head ####
 Dg_PH_info_ATAC <- filter(Dg_info_ATAC, Trait == "PH")
 Dg_PH_filtered_counts_ATAC <- Dg_filtered_OCR_counts_norm %>% dplyr::select(contains("PH")) 
@@ -2347,7 +2693,7 @@ dds_Dg_G_ATAC <- DESeq(dds_Dg_G_ATAC)
 dds_Dg_G_ATAC <- lfcShrink(dds_Dg_G_ATAC, coef="Sex_M_vs_F", type="normal")
 tally(as.data.frame(dds_Dg_G_ATAC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 13
 
-### Otau #### 
+# Otau #### 
 ### posterior head ####
 Ot_PH_info_ATAC <- filter(Ot_info_ATAC, Trait == "PH")
 Ot_PH_filtered_counts_ATAC <- Ot_filtered_OCR_counts_norm %>% dplyr::select(contains("PH")) 
@@ -2359,7 +2705,7 @@ nrow(dds_Ot_PH_ATAC) # 79738 (low read count OCRs already filtered out)
 
 dds_Ot_PH_ATAC <- DESeq(dds_Ot_PH_ATAC)
 dds_Ot_PH_ATAC <- lfcShrink(dds_Ot_PH_ATAC, coef="Sex_M_vs_F", type="normal")
-tally(as.data.frame(dds_Ot_PH_ATAC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 2560
+tally(as.data.frame(dds_Ot_PH_ATAC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 2560 -- but 3Apr2026 totaled 3261.. need to track down discrepancy
 
 ### anterior head ####
 Ot_AH_info_ATAC <- filter(Ot_info_ATAC, Trait == "AH")
@@ -2381,9 +2727,9 @@ dds_Ot_G_ATAC <- DESeqDataSetFromMatrix(countData = Ot_G_filtered_counts_ATAC,
                                         design = ~ Sex)
 dds_Ot_G_ATAC <- DESeq(dds_Ot_G_ATAC)
 dds_Ot_G_ATAC <- lfcShrink(dds_Ot_G_ATAC, coef="Sex_M_vs_F", type="normal")
-tally(as.data.frame(dds_Ot_G_ATAC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 1104
+tally(as.data.frame(dds_Ot_G_ATAC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 1296
 
-### Osag #### 
+# Osag #### 
 ### posterior head ####
 Os_PH_info_ATAC <- filter(Os_info_ATAC, Trait == "PH")
 Os_PH_filtered_counts_ATAC <- Os_filtered_OCR_counts_norm %>% dplyr::select(contains("PH")) 
@@ -2418,7 +2764,7 @@ dds_Os_G_ATAC <- DESeq(dds_Os_G_ATAC)
 dds_Os_G_ATAC <- lfcShrink(dds_Os_G_ATAC, coef="Sex_M_vs_F", type="normal")
 tally(as.data.frame(dds_Os_G_ATAC, independentFiltering=FALSE) %>% filter(padj <= 0.1)) # 1122
 
-### save results in dataframes ####
+# save results in dataframes ####
 ### Otau ####
 #posterior head
 Ot_PH_MvF_OCR <- as.data.frame(dds_Ot_PH_ATAC, independentFiltering=FALSE)
@@ -2467,7 +2813,8 @@ Dg_G_MvF_OCR <- as.data.frame(dds_Dg_G_ATAC, independentFiltering=FALSE)
 Dg_G_MvF_OCR <- cbind(Dg_filtered_OCR_counts_norm[1:4], Dg_G_MvF_OCR)
 Dg_G_MvF_OCR_sig <- Dg_G_MvF_OCR %>% filter(padj <= 0.1)
 
-### volcano plots of sex-responsive peaks ####
+###### Step 4.5: visualization ####
+# volcano plots of sex-responsive peaks ####
 cols <- c("F" = "#C1272D", "M" = "#2166AC", "ns" = "grey") 
 sizes <- c("F" = 2, "M" = 2, "ns" = 1) 
 alphas <- c("F" = 0.5, "M" = 0.5, "ns" = 1)
@@ -2495,7 +2842,7 @@ Dg_G_DA_vol_plot <- Dg_G_MvF_OCR %>%
   labs(title="Dgaz genitalia OCRs")
 Dg_G_DA_vol_plot
 
-ggsave(Dg_G_DA_vol_plot, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC-Dg-G-volcano.pdf",
+ggsave(Dg_G_DA_vol_plot, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/ATAC-Dg-G-volcano.pdf",
        width = 5, height = 4)
 
 ### posterior head
@@ -2519,7 +2866,7 @@ Dg_PH_DA_vol_plot <- Dg_PH_MvF_OCR %>%
   labs(title="Dgaz posterior head OCRs")
 Dg_PH_DA_vol_plot
 
-ggsave(Dg_PH_DA_vol_plot, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC-Dg-PH-volcano.pdf",
+ggsave(Dg_PH_DA_vol_plot, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/ATAC-Dg-PH-volcano.pdf",
        width = 5, height = 4)
 
 ### anterior head 
@@ -2543,7 +2890,7 @@ Dg_AH_DA_vol_plot <- Dg_AH_MvF_OCR %>%
   labs(title="Dgaz anterior head OCRs")
 Dg_AH_DA_vol_plot
 
-ggsave(Dg_AH_DA_vol_plot, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC-Dg-AH-volcano.pdf",
+ggsave(Dg_AH_DA_vol_plot, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/ATAC-Dg-AH-volcano.pdf",
        width = 5, height = 4)
 
 ### Otau ####
@@ -2569,7 +2916,7 @@ Ot_G_DA_vol_plot <- Ot_G_MvF_OCR %>%
   labs(title="Otau genitalia OCRs")
 Ot_G_DA_vol_plot
 
-ggsave(Ot_G_DA_vol_plot, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC-Ot-G-volcano.pdf",
+ggsave(Ot_G_DA_vol_plot, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/ATAC-Ot-G-volcano.pdf",
        width = 5, height = 4)
 
 ### posterior head
@@ -2593,7 +2940,7 @@ Ot_PH_DA_vol_plot <- Ot_PH_MvF_OCR %>%
   labs(title="Otau posterior head OCRs")
 Ot_PH_DA_vol_plot
 
-ggsave(Ot_PH_DA_vol_plot, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC-Ot-PH-volcano.pdf",
+ggsave(Ot_PH_DA_vol_plot, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/ATAC-Ot-PH-volcano.pdf",
        width = 5, height = 4)
 
 ### anterior head 
@@ -2617,7 +2964,7 @@ Ot_AH_DA_vol_plot <- Ot_AH_MvF_OCR %>%
   labs(title="Otau anterior head OCRs")
 Ot_AH_DA_vol_plot
 
-ggsave(Ot_AH_DA_vol_plot, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC-Ot-AH-volcano.pdf",
+ggsave(Ot_AH_DA_vol_plot, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/ATAC-Ot-AH-volcano.pdf",
        width = 5, height = 4)
 
 ### Osag ####
@@ -2642,7 +2989,7 @@ Os_G_DA_vol_plot <- Os_G_MvF_OCR %>%
   labs(title="Osag genitalia OCRs")
 Os_G_DA_vol_plot
 
-ggsave(Os_G_DA_vol_plot, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC-Os-G-volcano.pdf",
+ggsave(Os_G_DA_vol_plot, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/ATAC-Os-G-volcano.pdf",
        width = 5, height = 4)
 
 ### posterior head
@@ -2666,7 +3013,7 @@ Os_PH_DA_vol_plot <- Os_PH_MvF_OCR %>%
   labs(title="Osag posterior head OCRs")
 Os_PH_DA_vol_plot
 
-ggsave(Os_PH_DA_vol_plot, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC-Os-PH-volcano.pdf",
+ggsave(Os_PH_DA_vol_plot, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/ATAC-Os-PH-volcano.pdf",
        width = 5, height = 4)
 
 ### anterior head 
@@ -2690,9 +3037,9 @@ Os_AH_DA_vol_plot <- Os_AH_MvF_OCR %>%
   labs(title="Osag anterior head OCRs")
 Os_AH_DA_vol_plot
 
-ggsave(Os_AH_DA_vol_plot, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/ATAC-Os-AH-volcano.pdf",
+ggsave(Os_AH_DA_vol_plot, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/ATAC-Os-AH-volcano.pdf",
        width = 5, height = 4)
-### clustered heatmaps of sex-responsive peaks ####
+# clustered heatmaps of sex-responsive peaks ####
 myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
 ### Dgaz ####
 # genitalia 
@@ -2845,7 +3192,7 @@ Os_AH_DA_heatmap <- heatmap.2(as.matrix(Os_AH_DA_ocr[,14:23]),
 species <- c("Dgaz","Dgaz","Dgaz","Dgaz","Dgaz","Dgaz","Otau","Otau","Otau","Otau","Otau","Otau","Osag","Osag","Osag","Osag","Osag","Osag")
 sex <- c('F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M','F', 'M') 
 trait <- c('G','G','PH', 'PH','AH','AH','G','G','PH', 'PH','AH','AH','G','G','PH', 'PH','AH','AH')
-DA_peaks <- c(8,5,8,25,5,29,212,892,981,1579,4,16,245,877,13,149,43,170)
+DA_peaks <- c(8, 5, 8, 25, 5, 29, 279, 1017, 1140, 2121, 5, 15, 245, 877, 13, 149, 43, 170)
 
 DA_peak_numbers <- data.frame(species,sex,trait,DA_peaks)
 head(DA_peak_numbers)
@@ -2855,7 +3202,7 @@ DA_peak_numbers$species = factor(DA_peak_numbers$species, levels = c('Dgaz',"Ota
 bar_plot_OCR <-ggplot(data=DA_peak_numbers, aes(x=species, y=DA_peaks, fill=sex)) +
   geom_bar(stat="identity", position=position_dodge()) + 
   facet_grid(~trait) +
-  scale_y_break(c(1000,1500)) +
+  scale_y_break(c(1200,2000)) +
   geom_text(aes(label=DA_peaks), vjust = -0.5, size=3.5, position = position_dodge(0.9))+ # outside bars
   scale_fill_manual(values=c("#C1272D","#2166AC"))+
   labs(y= "number of differentially accessible OCRs")+
@@ -2863,9 +3210,9 @@ bar_plot_OCR <-ggplot(data=DA_peak_numbers, aes(x=species, y=DA_peaks, fill=sex)
 #coord_flip()
 bar_plot_OCR
 
-ggsave(bar_plot_OCR, file = "/Users/ericanadolski/Desktop/beetle-sex-dimorph/figures/bar_plot_OCR.pdf", width = 10, height = 5)
+ggsave(bar_plot_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/figures/bar_plot_OCR_Apr26.pdf", width = 10, height = 5)
 
-###### Step 5.5: differential accessibility across traits - needed for paper? ########
+###### differential accessibility across traits - needed for paper? ########
 ### Osag both sexes, trait responsive  ######
 dds_Os<- DESeqDataSetFromMatrix(countData = Os_filtered_counts[5:54], 
                                 colData = Os_info, 
@@ -3093,586 +3440,849 @@ Ot_LG_sig1 <- Ot_LG %>% filter(padj <= 0.01)
 tally(as.data.frame(results(dds_Ot, contrast=c("Trait","L","G"), independentFiltering=FALSE)) %>% 
         filter(padj <= 0.01 )) # 6146
 
-###### Step 6: annotate peaks with information on nearest genes ######
-#### read in genomic transcript coordinates ###
-Ot_transcript_coords <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau_transcript_coords.txt")
+###### Step 6: annotate peaks with DA column and information on nearest genes ######
+### read in genome transcript coordinates ######
+### Otau3 ####
+Ot_transcript_coords <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/Genomes/Otau3/Otau_transcript_coords.txt")
 # correct start and end positions for the negative strand transcripts
 Ot_transcript_starts <- Ot_transcript_coords %>% 
   mutate(start_correct = ifelse(orientation == "+", start, end),
          end_correct = ifelse(orientation == "+",end, start)) %>% 
   select(gene, chr, start_gene = start_correct, orientation)
 
-### anterior head ####
-# denote which condition showed higher accessibility
-OtAH_sex_res_OCR <- OtAH_sex_res_OCR %>% 
-  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
-                            "ns")))
-
-OtAH_OCR_sig_location  <- OtAH_sex_res_OCR %>%
-  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
-
-# combine peak list with nearby genes
-OtAH_DA_peak_gene_map <- 
-  left_join(OtAH_OCR_sig_location, Ot_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
-  mutate(peakGeneDist = mid-start_gene) %>% 
-  filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
-
-# combine peak-gene map with protein annotations
-OtAH_DA_peak_gene_map_anno <- left_join(OtAH_DA_peak_gene_map, Otau3_prot_anno, by = "gene")
-OtAH_F_peak_map_anno <- OtAH_DA_peak_gene_map_anno %>% filter(DA == "F")
-OtAH_M_peak_map_anno <- OtAH_DA_peak_gene_map_anno %>% filter(DA == "M")
-###### PRE-ANNOTATION STEPS #####
-### read in genome transcript coordinates ######
-
-### Dgaz1 ### 
-Dg_transcript_coords <- read.delim("/Users/ericanadolski/Documents/Genomes/Dgaz1/Dgaz_transcript_coords.txt")
+### Dgaz1 ####
+Dg_transcript_coords <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/Genomes/Dgaz1/Dgaz_transcript_coords.txt")
 # correct start and end positions for the negative strand transcripts
 Dg_transcript_starts <- Dg_transcript_coords %>% 
   mutate(start_correct = ifelse(orientation == "+", start, end),
          end_correct = ifelse(orientation == "+",end, start)) %>% 
   select(gene, chr, start_gene = start_correct, orientation)
-# now the Dg_transcript_starts file is ready for all annotation uses
 
-### Osag1 ### 
-Os_transcript_coords <- read.delim("/Users/ericanadolski/Documents/Genomes/Osag1/Osag_transcript_coords.txt")
+### Osag1 #####
+Os_transcript_coords <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/Genomes/Osag1/Osag_transcript_coords.txt")
 # correct start and end positions for the negative strand transcripts
 Os_transcript_starts <- Os_transcript_coords %>% 
   mutate(start_correct = ifelse(orientation == "+", start, end),
          end_correct = ifelse(orientation == "+",end, start)) %>% 
   select(gene, chr, start_gene = start_correct, orientation)
-# now file is ready for all annotation uses
 
-### Otau3 ### 
-Ot_transcript_coords <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau_transcript_coords.txt")
-# correct start and end positions for the negative strand transcripts
-Ot_transcript_starts <- Ot_transcript_coords %>% 
-  mutate(start_correct = ifelse(orientation == "+", start, end),
-         end_correct = ifelse(orientation == "+",end, start)) %>% 
-  select(gene, chr, start_gene = start_correct, orientation)
-# now file is ready for all annotation uses
+# Ot genitalia ####
+# denote which condition showed higher accessibility ####
+Ot_G_MvF_OCR_sig <- Ot_G_MvF_OCR_sig %>% 
+  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                            "ns")))
 
-### read in annotated protein best hits ####
+Ot_G_OCR_sig_location  <- Ot_G_MvF_OCR_sig %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-# get annotations of Dgaz1 protein best hits
-Dgaz1_prot_hits_clean <- read.delim("/Users/ericanadolski/Documents/Genomes/Dgaz1/Dgaz1_prot_hits_clean.txt")
-Dgaz1_prot_hits_clean$eval <- as.numeric(Dgaz1_prot_hits_clean$eval)
-Dgaz1_prot_hits_best <- Dgaz1_prot_hits_clean %>% 
-  group_by(DG3_ID) %>% 
-  top_n(-1,eval) %>% 
-  dplyr::slice(which.max(pident))
-
-# get annotations of Osag1 protein best hits
-Osag1_prot_hits_clean <- read.delim("/Users/ericanadolski/Documents/Genomes/Osag1/Osag1_prot_hits_clean.txt")
-Osag1_prot_hits_clean$eval <- as.numeric(Osag1_prot_hits_clean$eval)
-Osag1_prot_hits_best <- Osag1_prot_hits_clean %>% 
-  group_by(OS1_ID) %>% 
-  top_n(-1,eval) %>% 
-  dplyr::slice(which.max(pident))
-
-
-# get annotations of Otau3 protein best hits
-Otau3_prot_hits_clean <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau3_prot_hits_clean.txt")
-Otau3_prot_hits_clean$eval <- as.numeric(Otau3_prot_hits_clean$eval)
-Otau3_prot_hits_best <- Otau3_prot_hits_clean %>% 
-  group_by(OT3_ID) %>% 
-  top_n(-1,eval) %>% 
-  dplyr::slice(which.max(pident))
-
-# combine with annotations from Otau2 genome
-Otau2_prot_names <- read.delim("/Users/ericanadolski/Documents/Genomes/Otau3/Otau2_prot_names.txt")
-
-Dgaz1_prot_anno <- left_join(Dgaz1_prot_hits_best, Otau2_prot_names)
-colnames(Dgaz1_prot_anno)<- c("gene", "OT2_ID", "pident", "eval", "OT2_description")
-
-Osag1_prot_anno <- left_join(Osag1_prot_hits_best, Otau2_prot_names)
-colnames(Osag1_prot_anno)<- c("gene", "OT2_ID", "pident", "evalue","eval", "OT2_description")
-
-Otau3_prot_anno <- left_join(Otau3_prot_hits_best, Otau2_prot_names)
-colnames(Otau3_prot_anno)<- c("OT3_ID", "OT2_ID", "pident", "eval", "OT2_description")
-
-###### PEAK ANNOTATION ######
-###### Dgaz ###### 
-### Dg AH sex res ####
-
-### denote which condition showed higher accessibility - ordered in DESeq2
-DgAH_sex_anno_all <- DgAH_sex_res %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
-
-DgAH_sex_res_sig_anno <- DgAH_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
-
-DgAH_sex_peaks <- DgAH_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# fix peaks df so chr names are matching
-#### can use this code
-#df$chr <- gsub(';HRSCAF=\\d{1,2}','', df$chr)
-DgAH_sex_peaks$chr <- gsub('ScIV947_','chr', DgAH_sex_peaks$chr)
-DgAH_sex_peaks$chr <- gsub(';HRSCAF=\\d{1,2}','', DgAH_sex_peaks$chr)
-
-# combine gene info with peak info 
-DgAH_sex_peak_gene_map <- 
-  left_join(DgAH_sex_peaks, Dg_transcript_starts, by = "chr") %>% 
+# combine peak list with nearby genes ####
+Ot_G_DA_peak_gene_map <- 
+  left_join(Ot_G_OCR_sig_location, Ot_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with protein best hits
-DgAH_sex_peak_gene_map_anno <- left_join(DgAH_sex_peak_gene_map, Dgaz1_prot_anno, by = "gene")
-DgAH_F_peak_map_anno <- DgAH_sex_peak_gene_map_anno %>% filter(DA == "F")
-DgAH_M_peak_map_anno <- DgAH_sex_peak_gene_map_anno %>% filter(DA == "M")
+# combine peak-gene map with protein annotations ####
+Ot_G_DA_peak_gene_map_anno <- left_join(Ot_G_DA_peak_gene_map, Otau3_prot_anno, by = "gene")
+Ot_G_F_peak_map_anno <- Ot_G_DA_peak_gene_map_anno %>% filter(DA == "F")
+Ot_G_M_peak_map_anno <- Ot_G_DA_peak_gene_map_anno %>% filter(DA == "M")
 
+# Ot posterior head ####
+Ot_PH_MvF_OCR_sig <- Ot_PH_MvF_OCR_sig %>% 
+  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                            "ns")))
 
-### Dg G sex res ############################
-### denote which condition showed higher accessibility - ordered in DESeq2
-DgG_sex_anno_all <- DgG_sex_res %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
+Ot_PH_OCR_sig_location  <- Ot_PH_MvF_OCR_sig %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-DgG_sex_res_sig_anno <- DgG_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
-
-DgG_sex_peaks <- DgG_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# fix peaks df so chr names are matching
-DgG_sex_peaks$chr <- gsub('ScIV947_','chr', DgG_sex_peaks$chr)
-DgG_sex_peaks$chr <- gsub(';HRSCAF=\\d{1,2}','', DgG_sex_peaks$chr)
-
-# combine gene info with peak info 
-DgG_sex_peak_gene_map <- 
-  left_join(DgG_sex_peaks, Dg_transcript_starts, by = "chr") %>% 
+# combine peak list with nearby genes
+Ot_PH_DA_peak_gene_map <- 
+  left_join(Ot_PH_OCR_sig_location, Ot_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with protein best hits
-DgG_sex_peak_gene_map_anno <- left_join(DgG_sex_peak_gene_map, Dgaz1_prot_anno, by = "gene")
-DgG_F_peak_map_anno <- DgG_sex_peak_gene_map_anno %>% filter(DA == "F")
-DgG_M_peak_map_anno <- DgG_sex_peak_gene_map_anno %>% filter(DA == "M")
+# combine peak-gene map with protein annotations from earlier step 
+Ot_PH_DA_peak_gene_map_anno <- left_join(Ot_PH_DA_peak_gene_map, Otau3_prot_anno, by = "gene")
+Ot_PH_F_peak_map_anno <- Ot_PH_DA_peak_gene_map_anno %>% filter(DA == "F")
+Ot_PH_M_peak_map_anno <- Ot_PH_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-### Dg PH sex_res ####
-### denote which condition showed higher accessibility - ordered in DESeq2
-DgPH_sex_anno_all <- DgPH_sex_res %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
+# Ot anterior head ####
+Ot_AH_MvF_OCR_sig <- Ot_AH_MvF_OCR_sig %>% 
+  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                            "ns")))
 
-DgPH_sex_res_sig_anno <- DgPH_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
+Ot_AH_OCR_sig_location  <- Ot_AH_MvF_OCR_sig %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-DgPH_sex_peaks <- DgPH_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# fix peaks df so chr names are matching
-DgPH_sex_peaks$chr <- gsub('ScIV947_','chr', DgPH_sex_peaks$chr)
-DgPH_sex_peaks$chr <- gsub(';HRSCAF=\\d{1,2}','', DgPH_sex_peaks$chr)
-
-# combine gene info with peak info 
-DgPH_sex_peak_gene_map <- 
-  left_join(DgPH_sex_peaks, Dg_transcript_starts, by = "chr") %>% 
+# combine peak list with nearby genes
+Ot_AH_DA_peak_gene_map <- 
+  left_join(Ot_AH_OCR_sig_location, Ot_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with protein best hits
-DgPH_sex_peak_gene_map_anno <- left_join(DgPH_sex_peak_gene_map, Dgaz1_prot_anno, by = "gene")
-DgPH_F_peak_map_anno <- DgPH_sex_peak_gene_map_anno %>% filter(DA == "F")
-DgPH_M_peak_map_anno <- DgPH_sex_peak_gene_map_anno %>% filter(DA == "M")
-### DgF_AHPH_sig1 ####
-# add midpoint of peak
-DgF_AHPH_peaks <- DgF_AHPH_sig %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, start, mid, end)
+# combine peak-gene map with protein annotations
+Ot_AH_DA_peak_gene_map_anno <- left_join(Ot_AH_DA_peak_gene_map, Otau3_prot_anno, by = "gene")
+Ot_AH_F_peak_map_anno <- Ot_AH_DA_peak_gene_map_anno %>% filter(DA == "F")
+Ot_AH_M_peak_map_anno <- Ot_AH_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-# have to fix so chr names are matching
-# regex search and replace ;HRSCAF=\d{1,2}
-write.table(DgF_AHPH_peaks, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DgF_AHPH_peaks.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-DgF_AHPH_peaks <- read.delim("./GitHub/Beetle-sexual-dimorphism/DgF_AHPH_peaks.txt")
+# Os genitalia ####
+# denote which condition showed higher accessibility 
+Os_G_MvF_OCR_sig <- Os_G_MvF_OCR_sig %>% 
+  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                            "ns")))
 
-# combine gene info with peak info 
-DgF_AHPH_peak_gene_map <- 
-  left_join(DgF_AHPH_peaks, Dg_transcript_starts, by = "chr") %>% 
+Os_G_OCR_sig_location  <- Os_G_MvF_OCR_sig %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
+
+# combine peak list with nearby genes 
+Os_G_DA_peak_gene_map <- 
+  left_join(Os_G_OCR_sig_location, Os_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with Dgaz protein best hits
-DgF_AHPH_peak_gene_map_anno <- left_join(DgF_AHPH_peak_gene_map, Dgaz1_prot_anno, by = "gene")
+# combine peak-gene map with protein annotations 
+Os_G_DA_peak_gene_map_anno <- left_join(Os_G_DA_peak_gene_map, Osag1_prot_anno, by = "gene")
+Os_G_F_peak_map_anno <- Os_G_DA_peak_gene_map_anno %>% filter(DA == "F")
+Os_G_M_peak_map_anno <- Os_G_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-write.table(DgF_AHPH_res_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DgF_AHPH_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
+# Os posterior head ####
+Os_PH_MvF_OCR_sig <- Os_PH_MvF_OCR_sig %>% 
+  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                            "ns")))
 
-####### denote which condition showed higher accessibility 
-## if large fold change was negative and condition A had higher pileups, A is negative
+Os_PH_OCR_sig_location  <- Os_PH_MvF_OCR_sig %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-DgF_AHPH_anno_all <- DgF_AHPH %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "AH",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "PH",
-                            "notDA")
-  )
-  ) # %>% inner_join(., DgAH_sex_res_peak_gene_map_anno, by = "peak")
-DgF_AHPH_anno_sig <- DgF_AHPH_anno_all %>% 
-
-### DgM_AHPH_sig1 #### 
-# add midpoint of peak
-DgM_AHPH_peaks <- DgM_AHPH_sig %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, start, mid, end)
-
-# have to fix so chr names are matching
-# regex search and replace ;HRSCAF=\d{1,2}
-write.table(DgM_AHPH_peaks, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DgM_AHPH_peaks.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-DgM_AHPH_peaks <- read.delim("./GitHub/Beetle-sexual-dimorphism/DgM_AHPH_peaks.txt")
-
-# combine gene info with peak info 
-DgM_AHPH_peak_gene_map <- 
-  left_join(DgM_AHPH_peaks, Dg_transcript_starts, by = "chr") %>% 
+# combine peak list with nearby genes
+Os_PH_DA_peak_gene_map <- 
+  left_join(Os_PH_OCR_sig_location, Os_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with Dgaz protein best hits
-DgM_AHPH_peak_gene_map_anno <- left_join(DgM_AHPH_peak_gene_map, Dgaz1_prot_anno, by = "gene")
+# combine peak-gene map with protein annotations from earlier step 
+Os_PH_DA_peak_gene_map_anno <- left_join(Os_PH_DA_peak_gene_map, Osag1_prot_anno, by = "gene")
+Os_PH_F_peak_map_anno <- Os_PH_DA_peak_gene_map_anno %>% filter(DA == "F")
+Os_PH_M_peak_map_anno <- Os_PH_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-write.table(DgM_AHPH_res_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DgM_AHPH_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
+# Os anterior head ####
+Os_AH_MvF_OCR_sig <- Os_AH_MvF_OCR_sig %>% 
+  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                            "ns")))
 
-###### Otau ######
-### OtAH_sex_res_sig1 #### 
-### denote which condition showed higher accessibility - ordered in DESeq2
-OtAH_sex_anno_all <- OtAH_sex_res %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
+Os_AH_OCR_sig_location  <- Os_AH_MvF_OCR_sig %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-OtAH_sex_res_sig_anno <- OtAH_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
-
-OtAH_sex_peaks <- OtAH_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# combine gene info with peak info 
-OtAH_sex_peak_gene_map <- 
-  left_join(OtAH_sex_peaks, Ot_transcript_starts, by = "chr") %>% 
+# combine peak list with nearby genes
+Os_AH_DA_peak_gene_map <- 
+  left_join(Os_AH_OCR_sig_location, Os_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("OT3_ID"="gene") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with protein best hits
-OtAH_sex_peak_gene_map_anno <- left_join(OtAH_sex_peak_gene_map, Otau3_prot_anno, by = "OT3_ID")
-OtAH_F_peak_map_anno <- OtAH_sex_peak_gene_map_anno %>% filter(DA == "F")
-OtAH_M_peak_map_anno <- OtAH_sex_peak_gene_map_anno %>% filter(DA == "M")
-### OtG_sex_res ######
-### denote which condition showed higher accessibility - ordered in DESeq2
-OtG_sex_anno_all <- OtG_sex_res %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
+# combine peak-gene map with protein annotations
+Os_AH_DA_peak_gene_map_anno <- left_join(Os_AH_DA_peak_gene_map, Osag1_prot_anno, by = "gene")
+Os_AH_F_peak_map_anno <- Os_AH_DA_peak_gene_map_anno %>% filter(DA == "F")
+Os_AH_M_peak_map_anno <- Os_AH_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-OtG_sex_res_sig_anno <- OtG_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
+# Dg genitalia ####
+# denote which condition showed higher accessibility 
+Dg_G_MvF_OCR_sig <- Dg_G_MvF_OCR_sig %>% 
+  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                            "ns")))
 
-OtG_sex_peaks <- OtG_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
+Dg_G_OCR_sig_location  <- Dg_G_MvF_OCR_sig %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-# combine gene info with peak info 
-OtG_sex_peak_gene_map <- 
-  left_join(OtG_sex_peaks, Ot_transcript_starts, by = "chr") %>% 
+# combine peak list with nearby genes 
+Dg_G_DA_peak_gene_map <- 
+  left_join(Dg_G_OCR_sig_location, Dg_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("OT3_ID"="gene") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with protein best hits
-OtG_sex_peak_gene_map_anno <- left_join(OtG_sex_peak_gene_map, Otau3_prot_anno, by = "OT3_ID")
-OtG_F_peak_map_anno <- OtG_sex_peak_gene_map_anno %>% filter(DA == "F")
-OtG_M_peak_map_anno <- OtG_sex_peak_gene_map_anno %>% filter(DA == "M")
+# combine peak-gene map with protein annotations 
+Dg_G_DA_peak_gene_map_anno <- left_join(Dg_G_DA_peak_gene_map, Dgaz1_prot_anno, by = "gene")
+Dg_G_F_peak_map_anno <- Dg_G_DA_peak_gene_map_anno %>% filter(DA == "F")
+Dg_G_M_peak_map_anno <- Dg_G_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-### OtPH_sex_res_sig #####
-### denote which condition showed higher accessibility - ordered in DESeq2
-OtPH_sex_anno_all <- OtPH_sex_res %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
+# Dg posterior head ####
+Dg_PH_MvF_OCR_sig <- Dg_PH_MvF_OCR_sig %>% 
+  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                            "ns")))
 
-OtPH_sex_res_sig_anno <- OtPH_sex_res_sig %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "F",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "M",
-                            "notDA")))
+Dg_PH_OCR_sig_location  <- Dg_PH_MvF_OCR_sig %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
 
-OtPH_sex_peaks <- OtPH_sex_res_sig_anno %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, DA, start, mid, end)
-
-# combine gene info with peak info 
-OtPH_sex_peak_gene_map <- 
-  left_join(OtPH_sex_peaks, Ot_transcript_starts, by = "chr") %>% 
+# combine peak list with nearby genes
+Dg_PH_DA_peak_gene_map <- 
+  left_join(Dg_PH_OCR_sig_location, Dg_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("OT3_ID"="gene") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with protein best hits
-OtPH_sex_peak_gene_map_anno <- left_join(OtPH_sex_peak_gene_map, Otau3_prot_anno, by = "OT3_ID")
-OtPH_F_peak_map_anno <- OtPH_sex_peak_gene_map_anno %>% filter(DA == "F")
-OtPH_M_peak_map_anno <- OtPH_sex_peak_gene_map_anno %>% filter(DA == "M")
+# combine peak-gene map with protein annotations from earlier step 
+Dg_PH_DA_peak_gene_map_anno <- left_join(Dg_PH_DA_peak_gene_map, Dgaz1_prot_anno, by = "gene")
+Dg_PH_F_peak_map_anno <- Dg_PH_DA_peak_gene_map_anno %>% filter(DA == "F")
+Dg_PH_M_peak_map_anno <- Dg_PH_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-### OtF_AHPH_sig1 #### 
-# add midpoint of peak
-OtF_AHPH_peaks <- OtF_AHPH_sig %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, start, mid, end)
+# Dg anterior head ####
+Dg_AH_MvF_OCR_sig <- Dg_AH_MvF_OCR_sig %>% 
+  mutate(DA = ifelse(padj <= 0.1 & log2FoldChange < 0, "F",
+                     ifelse(padj <= 0.1 & log2FoldChange > 0, "M",
+                            "ns")))
 
-# combine gene info with peak info 
-OtF_AHPH_peak_gene_map <- 
-  left_join(OtF_AHPH_peaks, Ot_transcript_starts, by = "chr") %>% 
+Dg_AH_OCR_sig_location  <- Dg_AH_MvF_OCR_sig %>%
+  filter(padj <= 0.1) %>% mutate(mid = (end-start)/2 + start) %>% select(peak, chr, DA, start, mid, end)
+
+# combine peak list with nearby genes
+Dg_AH_DA_peak_gene_map <- 
+  left_join(Dg_AH_OCR_sig_location, Dg_transcript_starts, by = "chr", relationship = "many-to-many") %>% 
   mutate(peakGeneDist = mid-start_gene) %>% 
   filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("OT3_ID"="gene") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
+  group_by(peak) %>% top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
 
-# combine with protein best hits
-OtF_AHPH_peak_gene_map_anno <- left_join(OtF_AHPH_peak_gene_map, Otau3_prot_anno, by = "gene")
+# combine peak-gene map with protein annotations
+Dg_AH_DA_peak_gene_map_anno <- left_join(Dg_AH_DA_peak_gene_map, Dgaz1_prot_anno, by = "gene")
+Dg_AH_F_peak_map_anno <- Dg_AH_DA_peak_gene_map_anno %>% filter(DA == "F")
+Dg_AH_M_peak_map_anno <- Dg_AH_DA_peak_gene_map_anno %>% filter(DA == "M")
 
-write.table(OtF_AHPH_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtF_AHPH_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-## denote which condition showed higher accessibility - ordered in DESeq2
-OtF_AHPH_anno_all <- OtM_AHPH %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "AH",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "PH",
-                            "notDA")
-  )
-  ) # %>% inner_join(., DgAH_sex_res_peak_gene_map_anno, by = "peak")
-OtF_AHPH_anno_sig <- OtF_AHPH_anno_all %>% 
-  filter(padj <= 0.05)
-### OtM_AHPH_sig1 #####
-# add midpoint of peak
-OtM_AHPH_peaks <- OtM_AHPH_sig %>% mutate(mid = (end-start)/2 + start) %>% 
-  select(peak, chr, start, mid, end)
-
-# combine gene info with peak info 
-OtM_AHPH_peak_gene_map <- 
-  left_join(OtM_AHPH_peaks, Ot_transcript_starts, by = "chr") %>% 
-  mutate(peakGeneDist = mid-start_gene) %>% 
-  filter(abs(peakGeneDist) <= 25000) %>% # peak should be within 25kb of gene
-  group_by(peak) %>% 
-  rename("OT3_ID"="gene") %>% 
-  top_n(-2, abs(peakGeneDist)) #selecting 2 closest genes
-
-# combine with protein best hits
-OtM_AHPH_peak_gene_map_anno <- left_join(OtM_AHPH_peak_gene_map, Otau3_prot_anno, by = "gene")
-
-
-write.table(OtM_AHPH_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtM_AHPH_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-
-
-### denote which condition showed higher accessibility - ordered in DESeq2
-OtM_AHPH_anno_all <- OtM_AHPH %>% 
-  mutate(DA = ifelse(padj <= 0.05 & log2FoldChange < 0, "AH",
-                     ifelse(padj <= 0.05 & log2FoldChange > 0, "PH",
-                            "notDA")
-  )
-  ) # %>% inner_join(., DgAH_sex_res_peak_gene_map_anno, by = "peak")
-OtM_AHPH_anno_sig <- OtM_AHPH_anno_all %>% 
-  filter(padj <= 0.05)
-
-## get separate peak bed files 
-OtM_AHPH_anno_sig_PH_up <- OtM_AHPH_anno_sig %>%
-  filter(DA == "PH") %>% 
-  mutate(mid = (end-start)/2 + start)
-
-OtM_AHPH_anno_sig_AH_up <- OtM_AHPH_anno_sig %>%
-  filter(DA == "AH") %>% 
-  mutate(mid = (end-start)/2 + start)
-
-write.table(OtM_AHPH_anno_sig_PH_up, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtM_AHPH_peaks_PH_up.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-write.table(OtM_AHPH_anno_sig_AH_up, 
-            file = "./GitHub/Beetle-sexual-dimorphism/OtM_AHPH_peaks_AH_up.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-###### Step 9: export results ######
+###### Step 6.5: export results ######
 ### export separate male open and female open OCR list for motif enrichment analysis ########
 ### Dgaz 
 Dg_PH_F_up <- Dg_PH_MvF_OCR %>% filter(DA == "F")
-write.table(Dg_PH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgPH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Dg_PH_F_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/DgPH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Dg_PH_M_up <- Dg_PH_MvF_OCR %>% filter(DA == "M")
-write.table(Dg_PH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgPH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Dg_PH_M_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/DgPH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Dg_AH_F_up <- Dg_AH_MvF_OCR %>% filter(DA == "F")
-write.table(Dg_AH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgAH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Dg_AH_F_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/DgAH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Dg_AH_M_up <- Dg_AH_MvF_OCR %>% filter(DA == "M")
-write.table(Dg_AH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgAH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Dg_AH_M_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/DgAH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Dg_G_F_up <- Dg_G_MvF_OCR %>% filter(DA == "F")
-write.table(Dg_G_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgG_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Dg_G_F_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/DgG_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Dg_G_M_up <- Dg_G_MvF_OCR %>% filter(DA == "M")
-write.table(Dg_G_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/DgG_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Dg_G_M_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/DgG_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 ### Otau
 Ot_PH_F_up <- Ot_PH_MvF_OCR %>% filter(DA == "F")
-write.table(Ot_PH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtPH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Ot_PH_F_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OtPH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Ot_PH_M_up <- Ot_PH_MvF_OCR %>% filter(DA == "M")
-write.table(Ot_PH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtPH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Ot_PH_M_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OtPH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Ot_AH_F_up <- Ot_AH_MvF_OCR %>% filter(DA == "F")
-write.table(Ot_AH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtAH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Ot_AH_F_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OtAH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Ot_AH_M_up <- Ot_AH_MvF_OCR %>% filter(DA == "M")
-write.table(Ot_AH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtAH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Ot_AH_M_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OtAH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Ot_G_F_up <- Ot_G_MvF_OCR %>% filter(DA == "F")
-write.table(Ot_G_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtG_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Ot_G_F_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OtG_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Ot_G_M_up <- Ot_G_MvF_OCR %>% filter(DA == "M")
-write.table(Ot_G_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OtG_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Ot_G_M_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OtG_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 ### Osag 
 Os_PH_F_up <- Os_PH_MvF_OCR %>% filter(DA == "F")
-write.table(Os_PH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsPH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Os_PH_F_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OsPH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Os_PH_M_up <- Os_PH_MvF_OCR %>% filter(DA == "M")
-write.table(Os_PH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsPH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Os_PH_M_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homerOsPH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Os_AH_F_up <- Os_AH_MvF_OCR %>% filter(DA == "F")
-write.table(Os_AH_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsAH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Os_AH_F_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OsAH_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Os_AH_M_up <- Os_AH_MvF_OCR %>% filter(DA == "M")
-write.table(Os_AH_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsAH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Os_AH_M_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OsAH_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Os_G_F_up <- Os_G_MvF_OCR %>% filter(DA == "F")
-write.table(Os_G_F_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsG_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Os_G_F_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OsG_peaks_F_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 Os_G_M_up <- Os_G_MvF_OCR %>% filter(DA == "M")
-write.table(Os_G_M_up, file = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/onthophagus-paper/OsG_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Os_G_M_up, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/OsG_peaks_M_up.txt", sep = "\t", quote = FALSE, row.names = FALSE)
 
 ### export annotated significant peak tables ######
-#Otau
-write.table(OtAH_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtAH_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtAH_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtAH_F_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtAH_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtAH_M_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtG_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtG_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtG_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtG_F_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtG_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtG_M_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtPH_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtPH_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtPH_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtPH_F_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OtPH_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OtPH_M_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-#Osag
-write.table(OsAH_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OsAH_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OsAH_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OsAH_F_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OsAH_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OsAH_M_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OsG_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OsG_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OsG_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OsG_F_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OsG_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OsG_M_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-rite.table(OsPH_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OsPH_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OsPH_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OsPH_F_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(OsPH_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/OsPH_M_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-#Dgaz
-write.table(DgAH_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/DgAH_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(DgAH_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/DgAH_F_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(DgAH_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/DgAH_M_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(DgG_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/DgG_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(DgG_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/DgG_F_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(DgG_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/DgG_M_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(DgPH_sex_peak_gene_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/DgPH_sex_peak_gene_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(DgPH_F_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/DgPH_F_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-write.table(DgPH_M_peak_map_anno, 
-            file = "./GitHub/Beetle-sexual-dimorphism/DAP-tables-annotated/DgPH_M_peak_map_anno.txt",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-### tobias motifs ######
-homer <- universalmotif::read_homer("/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/OtPH-all-motifs/out_test/homerResults/nonRedundant2.motif")
+write.table(Ot_PH_MvF_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Ot_PH_MvF_OCR.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Ot_AH_MvF_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Ot_AH_MvF_OCR.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Ot_G_MvF_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Ot_G_MvF_OCR.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Os_PH_MvF_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Os_PH_MvF_OCR.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Os_AH_MvF_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Os_AH_MvF_OCR.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Os_G_MvF_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Os_G_MvF_OCR.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Dg_PH_MvF_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Dg_PH_MvF_OCR.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Dg_AH_MvF_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Dg_AH_MvF_OCR.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(Dg_G_MvF_OCR, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Dg_G_MvF_OCR.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
 
-homer <- universalmotif::read_homer("/Users/ericanadolski/Documents/Sexual_dimorphism_project/homer/OtPH-all-motifs/homerMotifs.all.motifs")
+### combine all three trait level DA tables into one per species
+Ot_DA_OCR_all_traits <- bind_cols(Ot_PH_MvF_OCR,Ot_AH_MvF_OCR,Ot_G_MvF_OCR)
+Ot_DA_OCR_all_traits <- Ot_DA_OCR_all_traits %>% select(1:10,12,17:22,24,29:34,36)
+head(Ot_DA_OCR_all_traits)
+nrow(Ot_DA_OCR_all_traits)
+write.table(Ot_DA_OCR_all_traits, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Ot_DA_OCR_all_traits.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
 
-universalmotif::write_jaspar(homer,"/Users/ericanadolski/Documents/Sexual_dimorphism_project/tobias/jasparOtPH2.motifs", overwrite = TRUE)
+Os_DA_OCR_all_traits <- bind_cols(Os_PH_MvF_OCR,Os_AH_MvF_OCR,Os_G_MvF_OCR)
+Os_DA_OCR_all_traits <- Os_DA_OCR_all_traits %>% select(1:10,12,17:22,24,29:34,36)
+head(Os_DA_OCR_all_traits)
+write.table(Os_DA_OCR_all_traits, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Os_DA_OCR_all_traits.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+
+Dg_DA_OCR_all_traits <- bind_cols(Dg_PH_MvF_OCR,Dg_AH_MvF_OCR,Dg_G_MvF_OCR)
+Dg_DA_OCR_all_traits <- Dg_DA_OCR_all_traits %>% select(1:10,12,17:22,24,29:34,36)
+head(Dg_DA_OCR_all_traits)
+write.table(Dg_DA_OCR_all_traits, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/peak_DA_tables/Dg_DA_OCR_all_traits.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+
+
+
+                                                      
+###### Step 7: assign orthologous OCRs across genomes using HALPER output ######
+# read in HALPER file with Osag mappings ####
+Os_halper <- read_tsv("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/halLiftover/Ot_peaks_OSAGI_final.bed", col_names = FALSE)
+colnames(Os_halper) <- c("chrom", "start", "end", "summit", "name",
+                       "mapped_len", "original_len", "mapped_block", "original_block")
+Os_halper <- Os_halper %>% mutate(source = "Osag")
+head(Os_halper)
+
+# compute coverage ratio
+Os_halper <- Os_halper %>% mutate(frac = mapped_len / original_len)
+
+# classify peaks
+Os_halper <- Os_halper %>% mutate(class = case_when(
+  frac >= 0.85 & frac <= 1.15 ~ "clean",
+  frac < 0.85 ~ "partial",
+  frac > 1.15 ~ "expanded",
+  TRUE ~ "other"))
+
+# get counts
+Os_halper %>% count(class)
+
+# read in HALPER file with Dgaz mappings ####
+Dg_halper <- read_tsv("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/halLiftover/Ot_peaks_DGAZE_final.bed", col_names = FALSE)
+colnames(Dg_halper) <- c("chrom", "start", "end", "summit", "name",
+                       "mapped_len", "original_len", "mapped_block", "original_block")
+Dg_halper <- Dg_halper %>% mutate(source = "Dgaz")
+
+# compute coverage ratio
+Dg_halper <- Dg_halper %>% mutate(frac = mapped_len / original_len)
+  
+# denote if each HALPER-lifted region overlaps an OCR in the target genome ####
+### filter HALPER output based on known OCRs in the target genome
+library(GenomicRanges)
+
+### Dgaz targets ####
+# load ATAC peaks
+Dg_atac_peaks <- read_tsv("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/halLiftover/Dg_peaks.bed", col_names = FALSE)
+colnames(Dg_atac_peaks) <- c("chrom", "start", "end", "peak_id")
+head(Dg_atac_peaks)
+
+# convert both to GRanges objects
+Dg_halper_gr <- GRanges(
+  seqnames = Dg_halper$chrom,
+  ranges = IRanges(start = Dg_halper$start, end = Dg_halper$end),
+  name = Dg_halper$name)
+
+Dg_atac_gr <- GRanges(
+  seqnames = Dg_atac_peaks$chrom,
+  ranges = IRanges(start = Dg_atac_peaks$start, end = Dg_atac_peaks$end),
+  peak_id = Dg_atac_peaks$peak_id)
+
+# find overlaps
+Dg_conserved <- findOverlaps(Dg_halper_gr, Dg_atac_gr)
+# queryHits(hits) → indices in halper_gr
+# subjectHits(hits) → indices in atac_gr
+
+# combine into one table
+Dg_conserved_df <- data.frame(
+  Ot_peak_id = Dg_halper$name[queryHits(Dg_conserved)],
+  halper_start = start(Dg_halper_gr)[queryHits(Dg_conserved)],
+  halper_end = end(Dg_halper_gr)[queryHits(Dg_conserved)],
+  Dg_peak_id = Dg_atac_peaks$peak_id[subjectHits(Dg_conserved)],
+  atac_start = Dg_atac_peaks$start[subjectHits(Dg_conserved)],
+  atac_end = Dg_atac_peaks$end[subjectHits(Dg_conserved)])
+
+head(Dg_conserved_df)
+# Column	Meaning
+# halper_name	ID of the lifted region from the query genome
+# halper_start / halper_end	Coordinates of the lifted region in the target genome
+# atac_peak_id	ID of the open chromatin peak in the target genome
+# atac_start / atac_end	Coordinates of the open chromatin peak
+# overlap_len	Number of base pairs overlapping between HALPER region and ATAC peak
+# frac_overlap	Fraction of the HALPER region overlapping the ATAC peak (overlap_len / mapped_len)
+
+# summarize how many HALPER peaks overlap ATAC peaks
+length(unique(Dg_conserved_df$Ot_peak_id)) # 50430
+  
+# summarize how many target ATAC peaks are hit
+length(unique(Dg_conserved_df$Dg_peak_id)) # 71037
+
+### Osag targets ####
+# load ATAC peaks
+Os_atac_peaks <- read_tsv("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/halLiftover/Os_peaks.bed", col_names = FALSE)
+colnames(Os_atac_peaks) <- c("chrom", "start", "end", "peak_id")
+head(Os_atac_peaks)
+
+# convert both to GRanges objects
+Os_halper_gr <- GRanges(
+  seqnames = Os_halper$chrom,
+  ranges = IRanges(start = Os_halper$start, end = Os_halper$end),
+  name = Os_halper$name)
+
+Os_atac_gr <- GRanges(
+  seqnames = Os_atac_peaks$chrom,
+  ranges = IRanges(start = Os_atac_peaks$start, end = Os_atac_peaks$end),
+  peak_id = Os_atac_peaks$peak_id)
+
+# find overlaps
+Os_conserved <- findOverlaps(Os_halper_gr, Os_atac_gr)
+
+# combine into one table
+Os_conserved_df <- data.frame(
+  Ot_peak_id = Os_halper$name[queryHits(Os_conserved)],
+  halper_start = start(Os_halper_gr)[queryHits(Os_conserved)],
+  halper_end = end(Os_halper_gr)[queryHits(Os_conserved)],
+  Os_peak_id = Os_atac_peaks$peak_id[subjectHits(Os_conserved)],
+  atac_start = Os_atac_peaks$start[subjectHits(Os_conserved)],
+  atac_end = Os_atac_peaks$end[subjectHits(Os_conserved)])
+
+head(Os_conserved_df)
+
+# summarize how many HALPER peaks overlap ATAC peaks
+length(unique(Os_conserved_df$Ot_peak_id)) # 56761
+
+# summarize how many target ATAC peaks are hit
+length(unique(Os_conserved_df$Os_peak_id)) # 57049
+
+# combine Osag and Dgaz target peak info ######
+full_conserved_peak_set <- full_join(Dg_conserved_df, Os_conserved_df, by = "Ot_peak_id") 
+full_conserved_peak_set <- full_conserved_peak_set %>% 
+  select(Ot_peak_id,halper_start.x,halper_end.x,Dg_peak_id,atac_start.x,atac_end.x,Os_peak_id,atac_start.y,atac_end.y) %>% 
+  dplyr::rename(Ot_start = halper_start.x ,Ot_end = halper_end.x, Dg_start = atac_start.x, Dg_end = atac_end.x, Os_start = atac_start.y, Os_end = atac_end.y)
+head(full_conserved_peak_set)
+nrow(full_conserved_peak_set) # 161783
+
+# select columns 
+peak_mapping_list <- full_conserved_peak_set %>% dplyr::select(Dg_peak_id,Ot_peak_id,Os_peak_id)
+
+# filter by 1:1:1 rows --- but why are we filtering out 1:1:0 rows? is that not useful information? ####
+filtered_conserved_peak_set <- full_conserved_peak_set %>% drop_na(Dg_peak_id, Os_peak_id)
+nrow(filtered_conserved_peak_set) # 106610
+filtered_conserved_peak_set %>% summarise(unique_count = n_distinct(Ot_peak_id)) # 36734
+
+# join with atac DA info - will have rows for conserved peaks plus rows for OCRS in each species that were tested for DA but not conserved ######
+### Otau
+OtPH_da_info <- Ot_PH_MvF_OCR %>% select(peak, Ot_PH_DA) %>% dplyr::rename(Ot_peak_id = peak)
+OtPH_da_info %>% dplyr::count(Ot_PH_DA)
+
+OtAH_da_info <- Ot_AH_MvF_OCR %>% select(peak, Ot_AH_DA) %>% dplyr::rename(Ot_peak_id = peak)
+OtG_da_info <- Ot_G_MvF_OCR %>% select(peak, Ot_G_DA) %>% dplyr::rename(Ot_peak_id = peak)
+head(OtG_da_info)
+### Osag
+OsPH_da_info <- Os_PH_MvF_OCR %>% select(peak, Os_PH_DA) %>% dplyr::rename(Os_peak_id = peak)
+OsPH_da_info %>% dplyr::count(Os_PH_DA)
+head(OsPH_da_info)
+
+OsAH_da_info <- Os_AH_MvF_OCR %>% select(peak, Os_AH_DA) %>% dplyr::rename(Os_peak_id = peak)
+OsG_da_info <- Os_G_MvF_OCR %>% select(peak, Os_G_DA) %>% dplyr::rename(Os_peak_id = peak)
+
+### Dgaz
+DgPH_da_info <- Dg_PH_MvF_OCR %>% select(peak, Dg_PH_DA) %>% dplyr::rename(Dg_peak_id = peak)
+DgPH_da_info %>% dplyr::count(Dg_PH_DA)
+
+DgAH_da_info <- Dg_AH_MvF_OCR %>% select(peak, Dg_AH_DA) %>% dplyr::rename(Dg_peak_id = peak)
+DgG_da_info <- Dg_G_MvF_OCR %>% select(peak, Dg_G_DA) %>% dplyr::rename(Dg_peak_id = peak)
+
+### join dfs
+conserved_peak_sex_res_PH <- filtered_conserved_peak_set %>%
+  full_join(OtPH_da_info, by = "Ot_peak_id") %>%
+  full_join(OsPH_da_info, by = "Os_peak_id") %>%
+  full_join(DgPH_da_info, by = "Dg_peak_id") %>%
+  dplyr::select(Dg_peak_id,Ot_peak_id,Os_peak_id,Dg_PH_DA,Ot_PH_DA,Os_PH_DA) # 309845 total rows
+
+conserved_peak_sex_res_AH <- filtered_conserved_peak_set %>%
+  full_join(OtAH_da_info, by = "Ot_peak_id") %>%
+  full_join(OsAH_da_info, by = "Os_peak_id") %>%
+  full_join(DgAH_da_info, by = "Dg_peak_id") %>%
+  dplyr::select(Dg_peak_id,Ot_peak_id,Os_peak_id,Dg_AH_DA,Ot_AH_DA,Os_AH_DA) # 309845 total rows
+
+conserved_peak_sex_res_G <- filtered_conserved_peak_set %>%
+  full_join(OtG_da_info, by = "Ot_peak_id") %>%
+  full_join(OsG_da_info, by = "Os_peak_id") %>%
+  full_join(DgG_da_info, by = "Dg_peak_id") %>%
+  dplyr::select(Dg_peak_id,Ot_peak_id,Os_peak_id,Dg_G_DA,Ot_G_DA,Os_G_DA) # 309845 total rows
+
+  
+# filter these dfs - remove any rows where all three DA == ns ####
+## PH
+colSums(is.na(conserved_peak_sex_res_PH))
+
+filtered_peak_sex_res_PH <- conserved_peak_sex_res_PH %>%
+    filter(!if_all(c(Dg_PH_DA,Ot_PH_DA,Os_PH_DA), ~ . %in% c(NA, "ns")))
+
+filtered_peak_sex_res_PH <- filtered_peak_sex_res_PH %>% mutate_all(~na_if(., ''))
+colSums(is.na(filtered_peak_sex_res_PH)) 
+nrow(filtered_peak_sex_res_PH) # 4846 rows
+
+## AH 
+colSums(is.na(conserved_peak_sex_res_AH))
+
+filtered_peak_sex_res_AH <- conserved_peak_sex_res_AH %>%
+  filter(!if_all(c(Dg_AH_DA,Ot_AH_DA,Os_AH_DA), ~ . %in% c(NA, "ns")))
+
+filtered_peak_sex_res_AH <- filtered_peak_sex_res_AH %>% mutate_all(~na_if(., ''))
+colSums(is.na(filtered_peak_sex_res_AH)) 
+nrow(filtered_peak_sex_res_AH) # 330 rows
+
+## G 
+colSums(is.na(conserved_peak_sex_res_G))
+
+filtered_peak_sex_res_G <- conserved_peak_sex_res_G %>%
+  filter(!if_all(c(Dg_G_DA,Ot_G_DA,Os_G_DA), ~ . %in% c(NA, "ns")))
+
+filtered_peak_sex_res_G <- filtered_peak_sex_res_G %>% mutate_all(~na_if(., ''))
+colSums(is.na(filtered_peak_sex_res_G)) 
+nrow(filtered_peak_sex_res_G) # 4204 rows
+
+# export data tables ####
+write.table(filtered_peak_sex_res_PH, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/conserved_OCRs/filtered_peak_sex_res_PH.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(filtered_peak_sex_res_AH, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/conserved_OCRs/filtered_peak_sex_res_AH.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(filtered_peak_sex_res_G, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/conserved_OCRs/filtered_peak_sex_res_G.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+
+# assign_OCR_id function to group overlapped mapping rows ####
+library(dplyr)
+library(tidyr)
+library(igraph)
+
+assign_OCR <- function(df) {
+  long_df <- df %>%
+    mutate(row_id = row_number()) %>%
+    pivot_longer(cols = c(Dg_peak_id, Ot_peak_id, Os_peak_id),
+                 values_to = "peak_id") %>%
+    filter(!is.na(peak_id))
+  
+  edges <- long_df %>%
+    select(row_id, peak_id)
+  
+  g <- graph_from_data_frame(edges, directed = FALSE)
+  comps <- components(g)
+  
+  # map nodes to components
+  node_comp <- tibble(
+    name = names(comps$membership),
+    comp = comps$membership
+  )
+  
+  # canonical label per component
+  comp_labels <- node_comp %>%
+    filter(!grepl("^\\d+$", name)) %>%   # keep peak IDs only
+    group_by(comp) %>%
+    summarise(anchor = min(name), .groups = "drop") %>%
+    arrange(anchor) %>%
+    mutate(OCR = sprintf("OCR_%03d", row_number()))
+  
+  # map rows to components
+  row_comp <- node_comp %>%
+    filter(grepl("^\\d+$", name)) %>%
+    mutate(row_id = as.integer(name)) %>%
+    left_join(comp_labels, by = "comp")
+  
+  df %>%
+    mutate(row_id = row_number()) %>%
+    left_join(row_comp %>% select(row_id, OCR), by = "row_id") %>%
+    select(-row_id)
+}
+
+full_conserved_peak_set_OCR_id <- assign_OCR(peak_mapping_list)
+head(full_conserved_peak_set_OCR_id)
+
+full_conserved_peak_set_OCR_id %>%
+  summarise(n_unique_OCR = n_distinct(OCR))
+
+full_conserved_peak_set_OCR_id %>% count(OCR, sort = TRUE)
+# OCR      n
+# OCR_001 129154
+# OCR_2395    143
+# OCR_125    103
+# OCR_3949     98
+# OCR_1998     94
+# OCR_282     89
+# OCR_1163     88
+
+## trial on smaller filtered dfs 
+OCR_group_filtered_peak_sex_res_PH <- assign_OCR(filtered_peak_sex_res_PH)
+head(OCR_group_filtered_peak_sex_res_PH)
+nrow(OCR_group_filtered_peak_sex_res_PH) # 4846 rows total
+OCR_group_filtered_peak_sex_res_PH %>%
+  summarise(n_unique_OCR = n_distinct(OCR)) # 3355 unique OCR groups
+
+###### Step 8:  binomial proportions test statistics on OCRs ####
+# pleiotropic OCRs ####
+# OCRs shared across traits Otau vs Dgaz males
+prop.test(x = c(27, 13), n = c(3153, 59)) # X-squared = 194.34, df = 1, p-value < 2.2e-16
+### note Warning message: Chi-squared approximation may be incorrect
+
+# OCRs shared across traits Otau vs Dgaz females
+prop.test(x = c(33, 7), n = c(1424, 21)) # X-squared = 62.891, df = 1, p-value = 2.185e-15
+
+# OCRs shared across traits Osag vs Dgaz males
+prop.test(x = c(140, 13), n = c(1196, 59)) # X-squared = 4.6795, df = 1, p-value = 0.03052
+
+# OCRs shared across traits Osag vs Dgaz females
+prop.test(x = c(11, 7), n = c(301, 21)) #X-squared = 27.381, df = 1, p-value = 1.67e-07
+
+# lineage specific OCRs ####
+# lineage specific OCRs Otau vs Dgaz males PH
+prop.test(x = c(1968, 21), n = c(2121, 25)) # X-squared = 1.6666, df = 1, p-value = 0.1967
+
+# lineage specific OCRs Otau vs Dgaz males AH
+prop.test(x = c(15, 27), n = c(15, 29)) # X-squared = 0.077066, df = 1, p-value = 0.7813
+
+# lineage specific OCRs Otau PH vs Otau G male
+prop.test(x = c(1968, 446), n = c(2121, 1017)) # X-squared = 924.55, df = 1, p-value < 2.2e-16
+
+# lineage specific OCRs Otau PH vs Otau G female
+prop.test(x = c(562, 184), n = c(1140, 279)) # X-squared = 24.262, df = 1, p-value = 8.406e-07
+
+# lineage specific OCRs Otau AH vs Otau G male
+prop.test(x = c(15, 446), n = c(15, 1017)) # X-squared = 16.65, df = 1, p-value = 4.495e-05
+
+# lineage specific OCRs Otau AH vs Otau G female
+prop.test(x = c(4, 184), n = c(5, 279)) # X-squared = 0.032893, df = 1, p-value = 0.8561
+
+### plotting conserved vs. lineage specific OCRs #####
+# O tau male
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("C" , "LS") , 3)
+tally <- c(571,446,153,1965,0,15)
+Ot_M_LS_OCRs <- data.frame(trait,type,tally)
+Ot_M_LS_OCRs$trait <- factor(Ot_M_LS_OCRs$trait , levels = c("G", "PH", "AH"))
+
+ggplot(Ot_M_LS_OCRs, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("C"="grey50", "LS"="black")) + 
+  labs(title= "O. taurus male-biased OCRs", x = "trait", y = "% of sex-biased OCRs") + 
+  theme_classic()
+
+# O tau female
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("C" , "LS") , 3)
+tally <- c(95,184,578,562,1,4)
+Ot_F_LS_OCRs <- data.frame(trait,type,tally)
+Ot_F_LS_OCRs$trait <- factor(Ot_F_LS_OCRs$trait , levels = c("G", "PH", "AH"))
+
+ggplot(Ot_F_LS_OCRs, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("C"="grey50", "LS"="black")) + 
+  labs(title= "O. taurus female-biased OCRs", x = "trait", y = "% of sex-biased OCRs") + 
+  theme_classic()
+
+# Osag male
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("C" , "LS") , 3)
+tally <- c(150,727,30,119,35,135)
+Os_M_LS_OCRs <- data.frame(trait,type,tally)
+Os_M_LS_OCRs$trait <- factor(Os_M_LS_OCRs$trait , levels = c("G", "PH", "AH"))
+
+ggplot(Os_M_LS_OCRs, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("C"="grey50", "LS"="black")) + 
+  labs(title= "O. sagittarius male-biased OCRs", x = "trait", y = "% of sex-biased OCRs") + 
+  theme_classic()
+
+# Osag female
+trait <- c(rep("G" , 2) , rep("PH" , 2) , rep("AH" , 2))
+type <- rep(c("C" , "LS") , 3)
+tally <- c(41,204,2,11,7,36)
+Os_F_LS_OCRs <- data.frame(trait,type,tally)
+Os_F_LS_OCRs$trait <- factor(Os_F_LS_OCRs$trait , levels = c("G", "PH", "AH"))
+
+ggplot(Os_F_LS_OCRs, aes(fill=type, y=tally, x=trait)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("C"="grey50", "LS"="black")) + 
+  labs(title= "O. sagittarius female-biased OCRs", x = "trait", y = "% of sex-biased OCRs") + 
+  theme_classic()
+
+### plotting shared vs. trait specific OCRs #####
+# male
+species <- c(rep("Dg" , 2) , rep("Ot" , 2) , rep("Os" , 2))
+type <- rep(c("S" , "TS") , 3)
+tally <- c(13,46,27,3126,140,1056)
+shared_OCRs_M <- data.frame(species,type,tally)
+shared_OCRs_M$species <- factor(shared_OCRs_M$species, levels = c("Dg", "Ot", "Os"))
+
+ggplot(shared_OCRs_M, aes(fill=type, y=tally, x=species)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("S"="grey50", "TS"="black")) + 
+  labs(title= "male-biased OCRs", x = "species", y = "% of sex-biased OCRs") + 
+  theme_classic()
+
+# female
+species <- c(rep("Dg" , 2) , rep("Ot" , 2) , rep("Os" , 2))
+type <- rep(c("S" , "TS") , 3)
+tally <- c(7,14,33,1391,290,1056)
+shared_OCRs_F <- data.frame(species,type,tally)
+shared_OCRs_F$species <- factor(shared_OCRs_F$species, levels = c("Dg", "Ot", "Os"))
+
+ggplot(shared_OCRs_F, aes(fill=type, y=tally, x=species)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values = c("S"="grey50", "TS"="black")) + 
+  labs(title= "female-biased OCRs", x = "species", y = "% of sex-biased OCRs") + 
+  theme_classic()
+
+### prepping noncoding selection files for homer ####
+Ot_nc_sel_res <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/From-phil/ot_beetle_DA_sel_data.txt", header=TRUE)
+
+Os_nc_sel_res <- read.delim("/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/From-phil/os_beetle_DA_sel_data.txt", header=TRUE)
+
+Ot_nc_pos_sel <- 
+  left_join(Ot_nc_sel_res, Ot_OCR_counts, by = "peak", relationship = "many-to-many") %>%  
+  filter(sig == 1, beetle == "OTAUR") %>%  
+  select(chr, start, end, peak, median_zeta)
+
+Ot_nc_no_sel <- 
+  left_join(Ot_nc_sel_res, Ot_OCR_counts, by = "peak", relationship = "many-to-many") %>%  
+  filter(sig == 0, beetle == "OTAUR") %>%  
+  select(chr, start, end, peak, median_zeta)
+
+Os_nc_pos_sel <- 
+  left_join(Os_nc_sel_res, Os_OCR_counts, by = "peak", relationship = "many-to-many") %>%  
+  filter(sig == 1, beetle == "OSAGI") %>%  
+  select(chr, start, end, peak, median_zeta)
+
+Os_nc_no_sel <- 
+  left_join(Os_nc_sel_res, Os_OCR_counts, by = "peak", relationship = "many-to-many") %>%  
+  filter(sig == 0, beetle == "OSAGI") %>%  
+  select(chr, start, end, peak, median_zeta)
+
+write.table(Ot_nc_pos_sel, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/Ot_nc_pos_sel.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+write.table(Os_nc_pos_sel, file = "/Users/ericanadolski/Library/CloudStorage/OneDrive-Personal/Documents/beetle-sex-dimorph/homer/Os_nc_pos_sel.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+
+### Stats on noncoding selection ######
+# Otau G
+Ot_G_summary_df <- Ot_nc_sel_res %>%
+  filter( beetle == "OTAUR") %>% 
+  mutate(G_DA_status = if_else(Ot_G_DA == "ns" | is.na(Ot_G_DA),"Non-DA","DA"),
+    sig_status = if_else(sig == 1, "Sig", "Non-sig")) %>%
+  group_by(G_DA_status, sig_status) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(G_DA_status) %>%
+  mutate(total = sum(n),proportion = n / total) %>%
+  ungroup()
+
+# G selection in DA vs non DA OCRs
+prop.test(x = c(10,1338), n = c(1132, 54261)) # X-squared = 11.038, df = 1, p-value = 0.0008925
+
+# Osag G
+Os_G_summary_df <- Os_nc_sel_res %>%
+  filter( beetle == "OSAGI") %>% 
+  mutate(G_DA_status = if_else(Os_G_DA == "ns" | is.na(Os_G_DA),"Non-DA","DA"),
+         sig_status = if_else(sig == 1, "Sig", "Non-sig")) %>%
+  group_by(G_DA_status, sig_status) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(G_DA_status) %>%
+  mutate(total = sum(n),proportion = n / total) %>%
+  ungroup()
+
+# G selection in DA vs non DA OCRs
+prop.test(x = c(22,3221), n = c(892, 49525)) # X-squared = 23.065, df = 1, p-value = 1.566e-06
+
+
+# Otau PH
+colSums(is.na(Ot_nc_sel_res))
+
+Ot_PH_summary_df <- Ot_nc_sel_res %>%
+  filter(beetle == "OSAGI") %>% 
+  mutate(
+    PH_DA_status = case_when(
+      Ot_PH_DA == "F" ~ "F DA",
+      Ot_PH_DA == "M" ~ "M DA",
+      TRUE ~ "Non-DA"
+    ),
+    sig_status = if_else(sig == 1, "Sig", "Non-sig")
+  ) %>%
+  count(PH_DA_status, sig_status, name = "n") %>%
+  group_by(PH_DA_status) %>%
+  mutate(
+    total = sum(n),
+    proportion = n / total,
+    percent = proportion * 100
+  ) %>%
+  ungroup()
+
+# PH selection in DA vs non DA OCRs
+prop.test(x = c(34,1314), n = c(1444, 53949)) # X-squared = 0.012268, df = 1, p-value = 0.9118
+
+# PH selection in F vs M DA OCRs
+prop.test(x = c(21,49), n = c(992, 452)) # X-squared = 49.358, df = 1, p-value = 2.132e-12
+
+# Osag PH
+colSums(is.na(Os_nc_sel_res))
+
+Os_PH_summary_df <- Os_nc_sel_res %>%
+  filter(beetle == "OSAGI") %>% 
+  mutate(
+    PH_DA_status = case_when(
+      Os_PH_DA == "F" ~ "F DA",
+      Os_PH_DA == "M" ~ "M DA",
+      TRUE ~ "Non-DA"
+    ),
+    sig_status = if_else(sig == 1, "Sig", "Non-sig")
+  ) %>%
+  count(PH_DA_status, sig_status, name = "n") %>%
+  group_by(PH_DA_status) %>%
+  mutate(
+    total = sum(n),
+    proportion = n / total,
+    percent = proportion * 100
+  ) %>%
+  ungroup()
+
+# PH selection in F vs M DA OCRs
+prop.test(x = c(0,9), n = c(12, 25)) # X-squared = 3.9204, df = 1, p-value = 0.0477
+### *** low sample size
+
+# PH selection in DA vs non DA OCRs
+prop.test(x = c(9,3234), n = c(37, 50380)) # X-squared = 16.832, df = 1, p-value = 4.084e-05
+### *** low sample size
+
+
+# Osag AH
+Os_AH_summary_df <- Os_nc_sel_res %>%
+  filter(beetle == "OSAGI") %>% 
+  mutate(
+    AH_DA_status = case_when(
+      Os_AH_DA == "F" ~ "F DA",
+      Os_AH_DA == "M" ~ "M DA",
+      TRUE ~ "Non-DA"
+    ),
+    sig_status = if_else(sig == 1, "Sig", "Non-sig")
+  ) %>%
+  count(AH_DA_status, sig_status, name = "n") %>%
+  group_by(AH_DA_status) %>%
+  mutate(
+    total = sum(n),
+    proportion = n / total,
+    percent = proportion * 100
+  ) %>%
+  ungroup()
+
+# AH selection in DA vs non DA OCRs
+prop.test(x = c(9,3234), n = c(56, 50361)) # X-squared = 7.1255, df = 1, p-value = 0.0076
+### *** low sample size
+
+# AH selection in F vs M DA OCRs
+prop.test(x = c(0,9), n = c(22, 34)) # X-squared = 5.115, df = 1, p-value = 0.02372
+### *** low sample size

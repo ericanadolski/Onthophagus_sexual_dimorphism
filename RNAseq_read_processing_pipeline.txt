@@ -1,0 +1,39 @@
+#######################
+1.	FastQC – quality control
+#######################
+
+module load fastqc/0.11.9
+
+for file in GSF*.fastq.gz; do fastqc $file --outdir /N/slate/emnadols/FastQCdir; done
+
+#######################
+2.	Trimmomatic – trim reads and perform QC
+#######################
+
+module load trimmomatic/0.36
+module load fastqc/0.11.9
+
+for file in *_R1_001.fastq.gz;
+do
+	X=$(basename $file _R1_001.fastq.gz)
+trimmomatic-0.36 PE -threads 8 -basein ${X}_R1_001.fastq.gz -baseout /N/slate/emnadols/trimmed/${X}.fastq.gz 
+ILLUMINACLIP:/Trimmomatic-0.39.1/adapters/TruSeq3-PE.fa:2:30:10 LEADING:10 TRAILING:10 SLIDINGWINDOW:4:15 MINLEN:20; 
+done
+
+cd /N/slate/emnadols/trimmed
+
+for file in *.fastq.gz; do fastqc $file --outdir /N/slate/emnadols/trimmed-fastqc; done
+
+
+#######################
+3.	salmon – pseudoalign reads to transcriptome generate abundance estimates
+#######################
+module load salmon/1.10.1
+
+salmon index -t /N/slate/emnadols/transcriptomes/Otau_nucleotides.fasta -i Otau_index
+
+for file in Ot-1P.fastq.gz; do
+  	X=$(basename $file _1P.fastq.gz)
+        echo working on $file
+        salmon quant -i Otau_index -l A -1 ${X}_1P.fastq.gz -2 ${X}_2P.fastq.gz -p 8 --validateMappings -o /N/slate/emnadols/salmon/${X}_quant;
+done

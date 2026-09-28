@@ -31,6 +31,6 @@ findMotifsGenome.pl OsAH_peaks_M_up_final.bed Osag_masked.fasta ./OsAH-M-up-moti
 findMotifsGenome.pl OsG_peaks_F_up_final.bed Osag_masked.fasta ./OsG-F-up-motifs -bg Os_allpeaks_final.bed -mask -size -50,50 -p 7 -mset insects -len 8,9,10,11,12,13,14,15,16,17,18,19,20
 
 ### running annotatePeaks.pl to find peak locations of identified motifs
-annotatePeaks.pl Os_allpeaks_final.bed Osau_masked.fasta -m dsx-FW.motif > dsx_motif_locations.txt
+annotatePeaks.pl Ot_allpeaks_final.bed Otau_masked.fasta -m dsx-FW.motif > dsx_motif_locations.txt
 
 

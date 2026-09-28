@@ -1,0 +1,174 @@
+########################
+#### step 1 ORTHOFINDER
+#### ran orthofinder on OTAU/OSAG/DGAZ proteomes
+
+orthofinder -f proteomes/
+
+# for this code see lab notebook #2, page 105
+# identifies 8741 SCOGs
+
+##################
+## step 2 need to use prot OG list to create nucleotide fasta for each OG
+# using biopython 
+cd SCOG/ 
+
+python
+    
+def parse_fasta_ids(input_fasta):
+    """
+    Parses a FASTA-formatted file and returns a set of FASTA IDs from the header lines.
+    """
+    target_ids = set()
+    with open(input_fasta, 'r') as f:
+        for line in f:
+            if line.startswith('>'):
+                target_id = line[1:].split()[0]
+                target_ids.add(target_id)
+    return target_ids
+
+def extract_matching_fasta_entries(reference_fasta_path, target_ids, output_path):
+    """
+    Parses the reference FASTA file and writes only entries with headers matching target_ids.
+    """
+    with open(reference_fasta_path, 'r') as infile, open(output_path, 'w') as outfile:
+        write = False
+        current_id = None
+        for line in infile:
+            if line.startswith('>'):
+                current_id = line[1:].split()[0]
+                write = current_id in target_ids
+            if write:
+                outfile.write(line)
+
+# One-liner usage for single FASTA input
+
+input_fasta = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/Orthofinder/prot_results_May01/SCOGs/OG0003963.fa"
+ref_fasta = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/Orthofinder/all_beetle_nucl.fasta"
+
+extract_matching_fasta_entries(
+    reference_fasta_path=ref_fasta,
+    target_ids=parse_fasta_ids(input_fasta),
+    output_path="OG0003962_out.fasta"
+)
+
+#### passing functions thru larger for loop
+
+input_dir = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/Orthofinder/prot_results_May01/SCOGs/"
+ref_fasta = "/Users/ericanadolski/Documents/Sexual_dimorphism_project/Orthofinder/all_beetle_nucl.fasta" 
+output_dir = os.path.join(input_dir, "outputs")
+
+import os
+os.makedirs(output_dir, exist_ok=True)
+
+### Loop over all .fa files in input directory
+   
+for filename in os.listdir(input_dir):
+    if filename.endswith(".fa") or filename.endswith(".fasta"):
+        input_fasta_path = os.path.join(input_dir, filename)
+        output_filename = os.path.splitext(filename)[0] + "_out.fasta"
+        output_path = os.path.join(output_dir, output_filename)
+
+        print(f"\n Processing: {filename}")
+        target_ids = parse_fasta_ids(input_fasta_path)
+        extract_matching_fasta_entries(ref_fasta, target_ids, output_path)
+        print(f"Output written to: {output_path}")
+        
+###########################
+#### step 3 generate newick-formatted tree for busted
+
+(('OTAU'{OTAU}:5,'OSAG'{OSAG}:5){Onthophagus}:32,'DGAZ'{DGAZ}:37):0;
+
+
+##################
+### step 4 remove gene IDs to match newick tree
+### for loop to remove gene IDs from fasta headers
+
+for file in *.fasta;
+do
+  	X=$(basename $file _out.fasta)
+	sed 's/|.*$//' $file > ../no_gene_ids/${X}.fa;
+done
+
+########################
+### step 5 MUSCLE MSA
+
+module load conda
+conda activate /N/slate/emnadols/coding_sel/muscle_env
+
+# for single file 
+muscle -align OG0003962_out.fasta -output ../aligned/OG0003962.afa
+
+# for loop:
+for file in *.fa;
+do
+  	X=$(basename $file .fa)
+  	echo working on $X
+	muscle -align $file -output ../aligned/${X}.afa
+done
+
+#####################
+###### step 6 clean stop codons
+### first, remove line breaks, then anchor sed to end of line and search for each stop codon
+
+mkdir no_stops/
+
+for file in *.afa;
+do
+  	X=$(basename $file .afa)
+    echo working on $X
+	awk '!/^>/ { printf "%s", $0; n = "\n" } 
+	/^>/ { print n $0; n = "" }
+	END { printf "%s", n }
+	' $file > ${X}_v2.afa;
+done
+
+for file in *_v2.afa; 
+do
+	X=$(basename $file _v2.afa)
+    echo working on $file
+	sed -i -e 's/TAA$//' -e 's/TAG$//' -e 's/TGA$//' $file;
+done
+
+for file in *_v2.afa; do
+	X=$(basename $file _v2.afa)
+	echo working on $file
+	mv $file ../no_stops/${X}.afa;
+done
+
+#########################
+### step 7 HYPHY BUSTED
+# busted S accounts for synonymous rate variation in the model
+
+mkdir BUSTED/
+cd no_stops/
+
+## need to put newick tree in same directory
+
+module load conda
+conda activate /N/slate/emnadols/noncoding_sel/hyphy_env
+
+hyphy busted --alignment OG0003962.afa --tree ../dung_phylogeny.newick --srv Yes --multiple-hits None --branches OTAU --savefit ../BUSTED/OG0003962_fit.txt --output ../BUSTED/OG0003962.json
+
+for file in *.afa; do
+	X=$(basename $file .afa)
+	echo working on $file
+	hyphy busted --alignment $file --tree dung_phylogeny.newick --srv Yes --multiple-hits None --branches OTAU --savefit ../BUSTED/${X}_fit.txt --output ../BUSTED/${X}.json;
+done
+
+# grep for all error messages
+grep -e 'working on' -e 'PROBLEM WITH SEQUENCE' -e 'fscanf' BUSTED_6296879.txt > errors.log
+
+## on 6/16, 1729 'problem with sequence' errors
+
+
+##################
+### notes
+
+Pal2Nal will generate a codon alignment without stop codons, given a MSA of proteins and the corresponding DNA sequences
+https://www.bork.embl.de/pal2nal/
+# online tool only shows option to simultaneously remove gaps AND cut out inframe stop codons
+
+# MACSE: Multiple Alignment of Coding SEquences Accounting for Frameshifts and Stop Codons
+# java -jar macse.jar -prog exportAlignment -align align.fasta -codonForFinalStop —
+
+## hyphy contains a batch file CleanStopCodons.bf
